@@ -1,0 +1,57 @@
+<!-- 
+Comp_Sci 351-1 : Project B
+Name: Spencer Fitch
+Email: SpencerFitch2022@u.northwestern.edu
+-->
+
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+	<meta charset="utf-8" />
+    <title>Project B - Spencer Fitch</title>
+  </head>
+	<!--	Create the HTML5 'canvas' element in which we will run WebGL  -->
+  <body onload="main()" onresize="resizeCanvas()" style="background-color:black; color: white; overflow: hidden;">
+    <canvas id="webgl" width="1000" height="500">
+    Please use a browser that supports "canvas"
+	</canvas>
+	<!--Flexbox container for lower portion of screen-->
+	<div style="display: flex; height: 30vh; overflow:auto;">
+		<div id="data container">
+			<div id= CurRotationSpeed></div>
+			<div id= CurRollAngleDisplay></div> 
+			<div id= CurWingAngleDisplay></div>
+			</br>
+
+			Change Position of Rotating Plane (-180 < x < +180 deg): 
+			<!-- Next, make an HTML 'input' box element, a text-box 10 chars wide where users
+				can type in text.  Give it an ID name so that our JavaScript program
+				(e.g. ControlMulti.js, loaded near the end of this file) can access this
+				HTML element by name in the 'tick' function.
+			--><input id='usrAngle' size=10> 
+				<button type="button" onClick='angleSubmit()'>Submit</button><br> 
+				<div id= EditBoxOut><br></div>
+
+			Rotation speed of rings:
+			<input id='aileronSlider' type='range' min='0' max='180' value="90" class="slider">
+			<b id='aileronMaxDisplay'></b>
+
+			<div id= CurBoxAngleDisplay></div>
+		</div>
+		<img src="images/ProjectBInstructions.png" style="height: 100%; padding-left: 20ch;">
+	</div>
+		
+	<!--	Load in the JavaScript libraries supplied by our textbook 
+			(Matsuda et al., 2013 WebGL Programming Guide) that help us
+			with WebGL programming:
+	-->
+    <script src="lib/webgl-utils.js"></script>
+    <script src="lib/webgl-debug.js"></script>
+    <script src="lib/cuon-utils.js"></script>
+    <script src="lib/cuon-matrix-quat03.js"></script>
+	<!--	Finally, load in our own JavaScript program file.
+	-->
+    <script src="FitchSpencer_ProjB.js"></script>
+  </body>
+</html>
