@@ -1883,7 +1883,7 @@ function drawAll() {
 				g_canvas.height);
 
 	// Define perspective parameters	
-	var FOV = 40.0;
+	var FOV = 30.0;
 	var zNear = 1.0;
 	var zFar = 20.0;
 				
