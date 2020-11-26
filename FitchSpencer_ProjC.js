@@ -1870,7 +1870,7 @@ function drawAll() {
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 	// Define viewport aspect ratio
-	var vpAspect = (g_canvas.width/2) / g_canvas.height;
+	var vpAspect = g_canvas.width / g_canvas.height;
 
 	
 	mvpMatrix.setIdentity();	// Define 'world-space' coords
@@ -1879,7 +1879,7 @@ function drawAll() {
 	// -- PERSPECTIVE Viewport -- //
 	gl.viewport(0,
 				0,
-				g_canvas.width/2,
+				g_canvas.width,
 				g_canvas.height);
 
 	// Define perspective parameters	
@@ -1904,8 +1904,10 @@ function drawAll() {
 	drawScene();
 	//-------------------//
 
+	
 	mvpMatrix = popMatrix();
 
+	/*
 	// -- ORTHO Viewport -- //
 	gl.viewport(g_canvas.width/2,
 				0,
@@ -1932,7 +1934,7 @@ function drawAll() {
 	drawAxisMarker();
 		  
 	drawScene();
-	
+	*/
 
 }
 
