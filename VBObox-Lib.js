@@ -416,15 +416,20 @@ function VBObox1() {
 
     // -------- INIT VERTEX BUFFER ---------- //
     makeHollowCylinder();
+    makeSphere();
     
-    var mySiz = cylVerts.length
+    var mySiz = (cylVerts.length + sphVerts.length)
     this.vboVerts = mySiz / floatsPerVertex;
 
     var vboVertices = new Float32Array(mySiz)
 
-    cylStart = 0
+    cylStart = 0;
     for(i=0,j=0; j<cylVerts.length; i++, j++) {
         vboVertices[i] = cylVerts[j];
+    }
+    sphStart = i;
+    for(j=0; j<sphVerts.length; i++, j++) {
+        vboVertices[i] = sphVerts[j];
     }
 
     this.vboContents = vboVertices;
@@ -624,14 +629,24 @@ VBObox1.prototype.draw = function() {
                         '.draw() call you needed to call this.switchToMe()!!');
     }  
 
-    this.ModelMat.scale(0.2, 0.2, 0.2);     // Shrink model
+    pushMatrix(this.ModelMat);
+
+    // Draw sphere
+    this.ModelMat.translate(1, 1, 0);
+    gl.uniformMatrix4fv(this.u_ModelMatLoc, false, this.ModelMat.elements);
+    drawSphere();
+    //
+
+    this.ModelMat = popMatrix();
 
     // Draw rotating rings
+    this.ModelMat.scale(0.2, 0.2, 0.2);     // Shrink model
     this.ModelMat.rotate(90, 0, 1, 0);              // Rotate Upright
     this.ModelMat.translate(-1.2, 1.0, 0.0);        // Move out of ground
     this.ModelMat.rotate(g_angle_gyro, 1, 0, 0);    // Spin around center
     gl.uniformMatrix4fv(this.u_ModelMatLoc, false, this.ModelMat.elements);
     drawHollowCylinder();
+    //
 
     var scale = 1.0/1.2;
     for(i=0; i<5; i++) {
@@ -821,7 +836,89 @@ function drawHollowCylinder() {
 }
 //// ------------------------------------------------------------------ ////
 
+
+
 //// ----------- Sphere Functions ------------------------------------- ////
 function makeSphere() {
-    return 1;
+    // Make a sphere from one OpenGL TRIANGLE_STRIP primitive.  
+    var slices = 13;		    // # of slices of the sphere along the z axis. >=3 req'd
+    var sliceVerts	= 27;	// # of vertices around the top edge of the slice
+    var sphColr = new Float32Array([1.0, 0.3, 0.3])
+    var topColr = new Float32Array([0.7, 0.7, 0.7]);	// North Pole: light gray
+    var equColr = new Float32Array([0.3, 0.7, 0.3]);	// Equator:    bright green
+    var botColr = new Float32Array([0.9, 0.9, 0.9]);	// South Pole: brightest gray.
+    var sliceAngle = Math.PI/slices;	// lattitude angle spanned by one slice.
+    
+    // Create a (global) array to hold this sphere's vertices:
+    sphVerts = new Float32Array(  ((slices * 2* sliceVerts) -2) * floatsPerVertex);
+    
+    var cos0 = 0.0;	
+    var sin0 = 0.0;
+    var cos1 = 0.0;
+    var sin1 = 0.0;	
+
+    var j = 0;
+    var isLast = 0;
+    var isFirst = 1;
+
+        for(s=0; s<slices; s++) {	// for each slice of the sphere,
+            // find sines & cosines for top and bottom of this slice
+            if(s==0) {
+                isFirst = 1;	// skip 1st vertex of 1st slice.
+                cos0 = 1.0; 	// initialize: start at north pole.
+                sin0 = 0.0;
+            }
+            else {					// otherwise, new top edge == old bottom edge
+                isFirst = 0;	
+                cos0 = cos1;
+                sin0 = sin1;
+            }								// & compute sine,cosine for new bottom edge.
+
+            cos1 = Math.cos((s+1)*sliceAngle);
+            sin1 = Math.sin((s+1)*sliceAngle);
+            // go around the entire slice, generating TRIANGLE_STRIP verts
+            // (Note we don't initialize j; grows with each new attrib,vertex, and slice)
+            if(s==slices-1) isLast=1;	// skip last vertex of last slice.
+            for(v=isFirst; v< 2*sliceVerts-isLast; v++, j+=floatsPerVertex) {	
+                if (v%2==0) { 
+                    sphVerts[j  ] = sin0 * Math.cos(Math.PI*(v)/sliceVerts); 	
+                    sphVerts[j+1] = sin0 * Math.sin(Math.PI*(v)/sliceVerts);	
+                    sphVerts[j+2] = cos0;		
+                    sphVerts[j+3] = 1.0;			
+                } else {
+                    sphVerts[j  ] = sin1 * Math.cos(Math.PI*(v-1)/sliceVerts);		// x
+                    sphVerts[j+1] = sin1 * Math.sin(Math.PI*(v-1)/sliceVerts);		// y
+                    sphVerts[j+2] = cos1;																				// z
+                    sphVerts[j+3] = 1.0;																				// w.		
+                }
+
+                sphVerts[j+4] = sphColr[0];
+                sphVerts[j+5] = sphColr[1];
+                sphVerts[j+6] = sphColr[2];
+                /*
+                if(s==0) {	// finally, set some interesting colors for vertices:
+                    sphVerts[j+4]=topColr[0]; 
+                    sphVerts[j+5]=topColr[1]; 
+                    sphVerts[j+6]=topColr[2];	
+                    }
+                else if(s==slices-1) {
+                    sphVerts[j+4]=botColr[0]; 
+                    sphVerts[j+5]=botColr[1]; 
+                    sphVerts[j+6]=botColr[2];	
+                }
+                else {
+                    sphVerts[j+4]=Math.random();// equColr[0]; 
+                    sphVerts[j+5]=Math.random();// equColr[1]; 
+                    sphVerts[j+6]=Math.random();// equColr[2];					
+                }
+                */
+            }
+        }
 }
+
+function drawSphere() {
+    gl.drawArrays(gl.TRIANGLE_STRIP,
+        sphStart/floatsPerVertex,
+        sphVerts.length/floatsPerVertex);
+}
+//// ------------------------------------------------------------------ ////

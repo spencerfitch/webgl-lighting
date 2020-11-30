@@ -1928,6 +1928,7 @@ function angleSubmit() {
   	console.log('angleSubmit: UsrTxt:', UsrTxt); // print in console, and
 };
 
+// Switch activated VBO objects
 function toggleVBO(vboNumber) {
 	switch(vboNumber) {
 		case 0:
