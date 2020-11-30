@@ -126,9 +126,10 @@ var g_xMdragTot=0.0;	// total (accumulated) mouse-drag amounts (in CVV coords).
 var g_yMdragTot=0.0;   
 
 
+g_worldMat = new Matrix4();
 
 worldBox = new VBObox0();	// Holds ground-plane grid and axis marker
-g_worldMat = new Matrix4();
+gouraudBox = new VBObox1();
 
 function main() {
 //==============================================================================
@@ -151,6 +152,7 @@ function main() {
 
 	// Init VBO 
 	worldBox.init(gl);
+	gouraudBox.init(gl);
 
 	// Set perspective camera
 	setCamera();
@@ -212,9 +214,17 @@ function drawAll() {
 	
 	setCamera();
 	animate();
+
+	// Draw ground plane and axis marker
 	worldBox.switchToMe();
 	worldBox.adjust();
 	worldBox.draw();
+
+	// Draw gourad scene
+	gouraudBox.switchToMe();
+	gouraudBox.adjust();
+	gouraudBox.draw();
+
 }
 
 function setCamera() {
@@ -1533,230 +1543,8 @@ function makeNULogo() {
 }
 
 
-function makeHollowCylinder() {
-	var locs = new Float32Array([
-		0, Math.PI/12, Math.PI/6, Math.PI/4, Math.PI/3, Math.PI*5/12, 
-		Math.PI/2, Math.PI*7/12, Math.PI*2/3, Math.PI*3/4, Math.PI*5/6, Math.PI*11/12,
-		Math.PI, Math.PI*13/12, Math.PI*7/6, Math.PI*5/4, Math.PI*4/3, Math.PI*17/12,
-		Math.PI*3/2, Math.PI*19/12, Math.PI*5/3, Math.PI*7/4, Math.PI*11/6, Math.PI*23/12,
-	]);
-
-	var vertsPerLoop = 14;
-	var floatsPerLoop = vertsPerLoop*floatsPerVertex;
-
-	var radInner = 1;
-	var radOuter = 1.2;
-	var halfThickness = 0.2;
-
-	var outerTopColr = new Float32Array([1.0, 0.0, 1.0]);
-	var outerBotColr = new Float32Array([0.0, 1.0, 0.0]);
-
-	var innerTopColr = new Float32Array([0.0, 0.0, 1.0]);
-	var innerBotColr = new Float32Array([1.0, 1.0, 0.0]);
-	
-	cylVerts = new Float32Array(floatsPerLoop*locs.length);
-
-	for (i=0, j=0; i<locs.length; i++, j+=floatsPerLoop) {
-		// Node i on outer BOTTOM
-		cylVerts[j  ] = radOuter*Math.cos(locs[i]);
-		cylVerts[j+1] = radOuter*Math.sin(locs[i]);
-		cylVerts[j+2] = -halfThickness;
-		cylVerts[j+3] = 1.0;
-		cylVerts[j+4] = outerBotColr[0];
-		cylVerts[j+5] = outerBotColr[1];
-		cylVerts[j+6] = outerBotColr[2];
-
-		// Node i on inner BOTTOM
-		cylVerts[j+7] = radInner*Math.cos(locs[i]);
-		cylVerts[j+8] = radInner*Math.sin(locs[i]);
-		cylVerts[j+9] = -halfThickness;
-		cylVerts[j+10] = 1.0;
-		cylVerts[j+11] = innerBotColr[0];
-		cylVerts[j+12] = innerBotColr[1];
-		cylVerts[j+13] = innerBotColr[2];
-
-		// Node i+1 on outer BOTTOM
-		cylVerts[j+14] = radOuter*Math.cos(locs[(i+1)%locs.length]);
-		cylVerts[j+15] = radOuter*Math.sin(locs[(i+1)%locs.length]);
-		cylVerts[j+16] = -halfThickness;
-		cylVerts[j+17] = 1.0;
-		cylVerts[j+18] = outerBotColr[0];
-		cylVerts[j+19] = outerBotColr[1];
-		cylVerts[j+20] = outerBotColr[2];
-		
-		
-		// Node i on inner BOTTOM
-		cylVerts[j+21] = radInner*Math.cos(locs[i]);
-		cylVerts[j+22] = radInner*Math.sin(locs[i]);
-		cylVerts[j+23] = -halfThickness;
-		cylVerts[j+24] = 1.0;
-		cylVerts[j+25] = innerBotColr[0];
-		cylVerts[j+26] = innerBotColr[1];
-		cylVerts[j+27] = innerBotColr[2];
-
-		// Node i+1 on inner BOTTOM
-		cylVerts[j+28] = radInner*Math.cos(locs[(i+1)%locs.length]);
-		cylVerts[j+29] = radInner*Math.sin(locs[(i+1)%locs.length]);
-		cylVerts[j+30] = -halfThickness;
-		cylVerts[j+31] = 1.0;
-		cylVerts[j+32] = innerBotColr[0];
-		cylVerts[j+33] = innerBotColr[1];
-		cylVerts[j+34] = innerBotColr[2];
-
-		// Node i+1 on inner TOP
-		cylVerts[j+35] = radInner*Math.cos(locs[(i+1)%locs.length]);
-		cylVerts[j+36] = radInner*Math.sin(locs[(i+1)%locs.length]);
-		cylVerts[j+37] = halfThickness;
-		cylVerts[j+38] = 1.0;
-		cylVerts[j+39] = innerTopColr[0];
-		cylVerts[j+40] = innerTopColr[1];
-		cylVerts[j+41] = innerTopColr[2];
-
-		// Node i on inner BOTTOM
-		cylVerts[j+42] = radInner*Math.cos(locs[i]);
-		cylVerts[j+43] = radInner*Math.sin(locs[i]);
-		cylVerts[j+44] = -halfThickness;
-		cylVerts[j+45] = 1.0;
-		cylVerts[j+46] = innerBotColr[0];
-		cylVerts[j+47] = innerBotColr[1];
-		cylVerts[j+48] = innerBotColr[2];
-
-		// Node i on inner TOP
-		cylVerts[j+49] = radInner*Math.cos(locs[i]);
-		cylVerts[j+50] = radInner*Math.sin(locs[i]);
-		cylVerts[j+51] = halfThickness;
-		cylVerts[j+52] = 1.0;
-		cylVerts[j+53] = innerTopColr[0];
-		cylVerts[j+54] = innerTopColr[1];
-		cylVerts[j+55] = innerTopColr[2];
-
-		// Node i on outer TOP
-		cylVerts[j+56] = radOuter*Math.cos(locs[i]);
-		cylVerts[j+57] = radOuter*Math.sin(locs[i]);
-		cylVerts[j+58] = halfThickness;
-		cylVerts[j+59] = 1.0;
-		cylVerts[j+60] = outerTopColr[0];
-		cylVerts[j+61] = outerTopColr[1];
-		cylVerts[j+62] = outerTopColr[2];
-
-		// Node i+1 on inner TOP
-		cylVerts[j+63] = radInner*Math.cos(locs[(i+1)%locs.length]);
-		cylVerts[j+64] = radInner*Math.sin(locs[(i+1)%locs.length]);
-		cylVerts[j+65] = halfThickness;
-		cylVerts[j+66] = 1.0;
-		cylVerts[j+67] = innerTopColr[0];
-		cylVerts[j+68] = innerTopColr[1];
-		cylVerts[j+69] = innerTopColr[2];
-
-		// Node i+1 on outer TOP
-		cylVerts[j+70] = radOuter*Math.cos(locs[(i+1)%locs.length]);
-		cylVerts[j+71] = radOuter*Math.sin(locs[(i+1)%locs.length]);
-		cylVerts[j+72] = halfThickness;
-		cylVerts[j+73] = 1.0;
-		cylVerts[j+74] = outerTopColr[0];
-		cylVerts[j+75] = outerTopColr[1];
-		cylVerts[j+76] = outerTopColr[2];
-
-		// Node i+1 on outer BOTTOM
-		cylVerts[j+77] = radOuter*Math.cos(locs[(i+1)%locs.length]);
-		cylVerts[j+78] = radOuter*Math.sin(locs[(i+1)%locs.length]);
-		cylVerts[j+79] = -halfThickness;
-		cylVerts[j+80] = 1.0;
-		cylVerts[j+81] = outerBotColr[0];
-		cylVerts[j+82] = outerBotColr[1];
-		cylVerts[j+83] = outerBotColr[2];
-
-		// Node i on outer TOP
-		cylVerts[j+84] = radOuter*Math.cos(locs[i]);
-		cylVerts[j+85] = radOuter*Math.sin(locs[i]);
-		cylVerts[j+86] = halfThickness;
-		cylVerts[j+87] = 1.0;
-		cylVerts[j+88] = outerTopColr[0];
-		cylVerts[j+89] = outerTopColr[1];
-		cylVerts[j+90] = outerTopColr[2];
-
-		// Node i on outer BOTTOM
-		cylVerts[j+91] = radOuter*Math.cos(locs[i]);
-		cylVerts[j+92] = radOuter*Math.sin(locs[i]);
-		cylVerts[j+93] = -halfThickness;
-		cylVerts[j+94] = 1.0;
-		cylVerts[j+95] = outerBotColr[0];
-		cylVerts[j+96] = outerBotColr[1];
-		cylVerts[j+97] = outerBotColr[2];
-		
-
-	}
-
-}
 
 
-function makeAxisMarker() {
-	axisVerts = new Float32Array([
-		0.00, 0.00, 0.00, 1.0,		1.0, 0.0, 0.0,	// X-axis marker
-		1.00, 0.00, 0.00, 1.0,		1.0, 0.0, 0.0,	// 
-		0.00, 0.00, 0.00, 1.0,		0.0, 1.0, 0.0,	// Y-axis marker
-		0.00, 1.00, 0.00, 1.0,		0.0, 1.0, 0.0,	//
-		0.00, 0.00, 0.00, 1.0,		0.0, 0.0, 1.0,	// Z-axis marker
-		0.00, 0.00, 1.00, 1.0,		0.0, 0.0, 1.0, 	//	  
-	])
-}
-
-function makeGroundGrid() {
-//==============================================================================
-// Create a list of vertices that create a large grid of lines in the x,y plane
-// centered at x=y=z=0.  Draw this shape using the GL_LINES primitive.
-
-	var xcount = 100;			// # of lines to draw in x,y to make the grid.
-	var ycount = 100;		
-	var xymax = 100.0;			// grid size; extends to cover +/-xymax in x and y.
- 	var xColr = new Float32Array([1.0, 1.0, 0.3]);	// bright yellow
- 	var yColr = new Float32Array([0.5, 1.0, 0.5]);	// bright green.
- 	
-	// Create an (global) array to hold this ground-plane's vertices:
-	gndVerts = new Float32Array(floatsPerVertex*2*(xcount+ycount));
-						// draw a grid made of xcount+ycount lines; 2 vertices per line.
-						
-	var xgap = xymax/(xcount-1);		// HALF-spacing between lines in x,y;
-	var ygap = xymax/(ycount-1);		// (why half? because v==(0line number/2))
-	
-	// First, step thru x values as we make vertical lines of constant-x:
-	for(v=0, j=0; v<2*xcount; v++, j+= floatsPerVertex) {
-		if(v%2==0) {	// put even-numbered vertices at (xnow, -xymax, 0)
-			gndVerts[j  ] = -xymax + (v  )*xgap;	// x
-			gndVerts[j+1] = -xymax;								// y
-			gndVerts[j+2] = 0.0;									// z
-			gndVerts[j+3] = 1.0;									// w.
-		}
-		else {				// put odd-numbered vertices at (xnow, +xymax, 0).
-			gndVerts[j  ] = -xymax + (v-1)*xgap;	// x
-			gndVerts[j+1] = xymax;								// y
-			gndVerts[j+2] = 0.0;									// z
-			gndVerts[j+3] = 1.0;									// w.
-		}
-		gndVerts[j+4] = xColr[0];			// red
-		gndVerts[j+5] = xColr[1];			// grn
-		gndVerts[j+6] = xColr[2];			// blu
-	}
-	// Second, step thru y values as wqe make horizontal lines of constant-y:
-	// (don't re-initialize j--we're adding more vertices to the array)
-	for(v=0; v<2*ycount; v++, j+= floatsPerVertex) {
-		if(v%2==0) {		// put even-numbered vertices at (-xymax, ynow, 0)
-			gndVerts[j  ] = -xymax;								// x
-			gndVerts[j+1] = -xymax + (v  )*ygap;	// y
-			gndVerts[j+2] = 0.0;									// z
-			gndVerts[j+3] = 1.0;									// w.
-		}
-		else {					// put odd-numbered vertices at (+xymax, ynow, 0).
-			gndVerts[j  ] = xymax;								// x
-			gndVerts[j+1] = -xymax + (v-1)*ygap;	// y
-			gndVerts[j+2] = 0.0;									// z
-			gndVerts[j+3] = 1.0;									// w.
-		}
-		gndVerts[j+4] = yColr[0];			// red
-		gndVerts[j+5] = yColr[1];			// grn
-		gndVerts[j+6] = yColr[2];			// blu
-	}
-}
 
 
 ////  ------------------------------------------------------------------ //// 
@@ -2087,9 +1875,6 @@ function animate() {
 		g_angle_box = Math.min(g_angle_boxMax, newBoxAngle);
 	}
 	// If both/neither X and C pressed, then maintain current opening
-
-	
-
 
 	
   	// If currently paused, do not update automatic animations
