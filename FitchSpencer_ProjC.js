@@ -128,8 +128,11 @@ var g_yMdragTot=0.0;
 
 g_worldMat = new Matrix4();
 
-worldBox = new VBObox0();	// Holds ground-plane grid and axis marker
-gouraudBox = new VBObox1();
+var worldBox = new VBObox0();	// Holds ground-plane grid and axis marker
+var gouraudBox = new VBObox1();
+
+var VBO0Active = true;
+var VBO1Active = true;
 
 function main() {
 //==============================================================================
@@ -215,16 +218,19 @@ function drawAll() {
 	setCamera();
 	animate();
 
-	// Draw ground plane and axis marker
-	worldBox.switchToMe();
-	worldBox.adjust();
-	worldBox.draw();
+	if (VBO0Active) {
+		// Draw ground plane and axis marker
+		worldBox.switchToMe();
+		worldBox.adjust();
+		worldBox.draw();
+	}
 
-	// Draw gourad scene
-	gouraudBox.switchToMe();
-	gouraudBox.adjust();
-	gouraudBox.draw();
-
+	if (VBO1Active) {
+		// Draw gourad scene
+		gouraudBox.switchToMe();
+		gouraudBox.adjust();
+		gouraudBox.draw();
+	}
 }
 
 function setCamera() {
@@ -1921,6 +1927,17 @@ function angleSubmit() {
 
   	console.log('angleSubmit: UsrTxt:', UsrTxt); // print in console, and
 };
+
+function toggleVBO(vboNumber) {
+	switch(vboNumber) {
+		case 0:
+			VBO0Active = !VBO0Active;
+			break;
+		case 1:
+			VBO1Active = !VBO1Active;
+			break;
+	}
+}
 
 
 

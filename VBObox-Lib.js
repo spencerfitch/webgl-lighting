@@ -623,6 +623,7 @@ VBObox1.prototype.draw = function() {
         console.log('ERROR! before' + this.constructor.name + 
                         '.draw() call you needed to call this.switchToMe()!!');
     }  
+
     this.ModelMat.scale(0.2, 0.2, 0.2);     // Shrink model
 
     // Draw rotating rings
@@ -819,3 +820,8 @@ function drawHollowCylinder() {
 		cylVerts.length/floatsPerVertex);
 }
 //// ------------------------------------------------------------------ ////
+
+//// ----------- Sphere Functions ------------------------------------- ////
+function makeSphere() {
+    return 1;
+}
