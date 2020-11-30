@@ -634,6 +634,10 @@ VBObox1.prototype.adjust = function() {
         // Adjust values for our uniforms,
     
 
+    this.MvpMat.set(g_worldMat);
+    this.updateUniforms();
+
+    /*
     this.ModelMat.setRotate(90, 0, 1, 0);
 
     this.MvpMat.set(g_worldMat);
@@ -641,8 +645,23 @@ VBObox1.prototype.adjust = function() {
 
     this.NormalMat.setInverseOf(this.ModelMat);
     this.NormalMat.transpose();
-        
     
+    // Send  new 'ModelMat' values to the GPU's uniform
+    gl.uniformMatrix4fv(this.u_ModelMatLoc, false, this.ModelMat.elements);	
+    gl.uniformMatrix4fv(this.u_MvpMatLoc, false, this.MvpMat.elements);
+    gl.uniformMatrix4fv(this.u_NormalMatLoc, false, this.NormalMat.elements);
+    */
+}
+
+
+VBObox1.prototype.updateUniforms = function() {
+    this.ModelMat.setIdentity();
+
+    this.MvpMat.multiply(this.ModelMat);
+    
+    this.NormalMat.setInverseOf(this.ModelMat);
+    this.NormalMat.transpose();
+
     // Send  new 'ModelMat' values to the GPU's uniform
     gl.uniformMatrix4fv(this.u_ModelMatLoc, false, this.ModelMat.elements);	
     gl.uniformMatrix4fv(this.u_MvpMatLoc, false, this.MvpMat.elements);
@@ -660,32 +679,35 @@ VBObox1.prototype.draw = function() {
                         '.draw() call you needed to call this.switchToMe()!!');
     }  
 
-    //pushMatrix(this.ModelMat);
+    //pushMatrix(this.MvpMat);
 
     // Draw sphere
-    this.ModelMat.translate(1, 1, 0);
-    gl.uniformMatrix4fv(this.u_ModelMatLoc, false, this.ModelMat.elements);
+    this.MvpMat.translate(1, 1, 0);
+    this.MvpMat.scale(0.5, 0.5, 0.5);
+    this.updateUniforms();
     drawSphere();
-
-    //this.ModelMat = popMatrix();
-
+    
     /*
+    this.MvpMat = popMatrix();
+
     // Draw rotating rings
-    this.ModelMat.scale(0.2, 0.2, 0.2);             // Shrink model
-    this.ModelMat.rotate(90, 0, 1, 0);              // Rotate Upright
-    this.ModelMat.translate(-1.2, 1.0, 0.0);        // Move out of ground
-    this.ModelMat.rotate(g_angle_gyro, 1, 0, 0);    // Spin around center
-    gl.uniformMatrix4fv(this.u_ModelMatLoc, false, this.ModelMat.elements);
+    this.MvpMat.translate(-0.5, 0.5, 0.0)
+    this.MvpMat.scale(0.2, 0.2, 0.2);             // Shrink model
+    this.MvpMat.rotate(90, 0, 1, 0);              // Rotate Upright
+    this.MvpMat.translate(-1.2, 0.0, 0.0);        // Move out of ground
+    this.MvpMat.rotate(g_angle_gyro, 1, 0, 0);    // Spin around center
+    this.updateUniforms();
     drawHollowCylinder();
     
     var scale = 1.0/1.2;
     for(i=0; i<5; i++) {
-        this.ModelMat.rotate(g_angle_gyro, 1-i%2, i%2, 0);
-        this.ModelMat.scale(scale, scale, scale);
-        gl.uniformMatrix4fv(this.u_ModelMatLoc, false, this.ModelMat.elements);
+        this.MvpMat.rotate(g_angle_gyro, 1-i%2, i%2, 0);
+        this.MvpMat.scale(scale, scale, scale);
+        this.updateUniforms();
         drawHollowCylinder();
     }
     */
+    
 }
    
 
