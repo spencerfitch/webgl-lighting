@@ -1,10 +1,11 @@
 /*
-Comp_Sci 351-1 : Project B
+Comp_Sci 351-1 : Project C
 Name: Spencer Fitch
 Email: SpencerFitch2022@u.northwestern.edu
 */
 
 // Vertex shader program----------------------------------
+
 var VSHADER_SOURCE = 
   'uniform mat4 u_ModelMatrix;\n' +
   'attribute vec4 a_Position;\n' +
@@ -15,6 +16,22 @@ var VSHADER_SOURCE =
   '  gl_PointSize = 10.0;\n' +
   '  v_Color = a_Color;\n' +
   '}\n';
+/*
+var VSHADER_SOURCE = 
+  'uniform mat4 u_ModelMatrix;\n' +
+  'uniform mat4 u_NormalMatrix;\n' +
+  'attribute vec4 a_Position;\n' +
+  'attribute vec3 a_Color;\n' +
+  'attribute vec4 a_Normal;\n'
+  'varying vec4 v_Color;\n' +
+  'void main() {\n' +
+  '  vec4 transVEc = u_NormalMatrix + vec4(a_Normal, 0.0);\n' +
+  '  vec3 normVec = normalize(transVec.xyz);\n' +
+  '  vec3 lightVec = vec3(0.0, -1.0, 0.0);\n' +
+  '  gl_Position = u_ModelMatrix * a_Position;\n' +
+  '  v_Color = a_Color;\n' +
+  '}\n';
+*/
 
 // Fragment shader program----------------------------------
 var FSHADER_SOURCE = 
@@ -139,12 +156,7 @@ function main() {
 
 	// Add keyboard event listeners
 	window.addEventListener("keydown", myKeyDown, false);
-	window.addEventListener("keyup", myKeyUp, false);
-
-	// Add Mouse click event listeners 
-	window.addEventListener("mousedown", myMouseDown); 
-	window.addEventListener("mousemove", myMouseMove); 
-	window.addEventListener("mouseup", myMouseUp);			
+	window.addEventListener("keyup", myKeyUp, false);	
 	
 	// Specify the color for clearing <canvas>
 	gl.clearColor(0.25, 0.2, 0.25, 1.0);
@@ -1860,7 +1872,33 @@ function drawGroundGrid() {
 
 
 
+function setCamera() {
+	// -- PERSPECTIVE Viewport -- //
+	gl.viewport(0,
+		0,
+		g_canvas.width,
+		g_canvas.height);
 
+		
+	// Define viewport aspect ratio
+	var vpAspect = g_canvas.width / g_canvas.height;
+
+	// Define perspective parameters	
+	var FOV = 30.0;
+	var zNear = 1.0;
+	var zFar = 20.0;
+	
+	mvpMatrix.setPerspective(
+		FOV,		// FOVY: top-to-bottom vertical image angle
+		vpAspect,	// Image Aspect Ratio
+		zNear,		// Camera z-near distance 	(nearest distance to camera we render)
+		zFar);		// Camera z-far distance	(farthest distance from camera we render)
+
+	mvpMatrix.lookAt(
+		e_x, e_y, e_z,		// Camera location
+		L_x, L_y, L_z,		// Look-at point
+		0 ,  0 ,  1 );		// View UP vector
+}
 
 
 
@@ -1869,73 +1907,24 @@ function drawAll() {
   // Clear <canvas>  colors AND the depth buffer
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-	// Define viewport aspect ratio
-	var vpAspect = g_canvas.width / g_canvas.height;
-
-	
 	mvpMatrix.setIdentity();	// Define 'world-space' coords
-	pushMatrix(mvpMatrix);
 
-	// -- PERSPECTIVE Viewport -- //
-	gl.viewport(0,
-				0,
-				g_canvas.width,
-				g_canvas.height);
+	setCamera();
 
-	// Define perspective parameters	
-	var FOV = 30.0;
-	var zNear = 1.0;
-	var zFar = 20.0;
-				
-	mvpMatrix.setPerspective(
-		FOV,		// FOVY: top-to-bottom vertical image angle
-	  	vpAspect,	// Image Aspect Ratio
-		zNear,		// Camera z-near distance 	(nearest distance to camera we render)
-		zFar);		// Camera z-far distance	(farthest distance from camera we render)
-		
-	mvpMatrix.lookAt(
-		e_x, e_y, e_z,		// Camera location
-		L_x, L_y, L_z,		// Look-at point
-		 0 ,  0 ,  1 );		// View UP vector
-
+	// Draw origin axis marker
 	gl.uniformMatrix4fv(g_modelMatLoc, false, mvpMatrix.elements);
 	drawAxisMarker();
+	
+	pushMatrix(mvpMatrix);
 
-	drawScene();
-	//-------------------//
-
+	// Draw ground grid
+	mvpMatrix.scale(0.1, 0.1, 0.1);
+	gl.uniformMatrix4fv(g_modelMatLoc, false, mvpMatrix.elements);
+	drawGroundGrid();
 	
 	mvpMatrix = popMatrix();
 
-	/*
-	// -- ORTHO Viewport -- //
-	gl.viewport(g_canvas.width/2,
-				0,
-				g_canvas.width/2,
-				g_canvas.height);
-
-	var orthoDist = (zFar-zNear)/6;
-
-	mvpMatrix.setOrtho(
-		-orthoDist*vpAspect,	// Scale b/c FOV only corrects vertical?
-		 orthoDist*vpAspect,
-		-orthoDist,
-		 orthoDist,
-		 zNear,
-		 zFar
-	);
-	
-	mvpMatrix.lookAt(
-		e_x, e_y, e_z,		// Camera location
-		L_x, L_y, L_z,		// Look-at point
-		0 ,  0 ,  1 );		// View UP vector
-		  
-	gl.uniformMatrix4fv(g_modelMatLoc, false, mvpMatrix.elements);
-	drawAxisMarker();
-		  
 	drawScene();
-	*/
-
 }
 
 function drawScene() {
@@ -2026,20 +2015,6 @@ function drawScene() {
 	mvpMatrix.translate(0.5, 0.8, 0);	// Shift to correct location on the canvas
 	mvpMatrix.scale(0.1, 0.1, 0.1);		// Shrink model
 
-	// Rotate around center of logo
-	mvpMatrix.translate(2.9, 0.5, 4.425);			// Translate so that rotation happens at center of cube
-	
-	quatMatrix.setFromQuat(qTot.x, qTot.y, qTot.z, qTot.w);	// Rotate with quaternion
-	mvpMatrix.concat(quatMatrix);
-
-	pushMatrix(mvpMatrix);
-	mvpMatrix.scale(4,4,4);
-	gl.uniformMatrix4fv(g_modelMatLoc, false, mvpMatrix.elements);
-	drawAxisMarker();
-
-	mvpMatrix = popMatrix();
-	mvpMatrix.translate(-2.9, -0.5,  -4.425);		// Translate back for drawing
-
 	gl.uniformMatrix4fv(g_modelMatLoc, false, mvpMatrix.elements);
 	drawNULogo();
 	// --------------------------------------------- //
@@ -2054,15 +2029,6 @@ function drawScene() {
 		gl.uniformMatrix4fv(g_modelMatLoc, false, mvpMatrix.elements);
 		drawPauseIcon();
 	}
-	// --------------------------------------------- //
-
-	mvpMatrix = popMatrix();
-
-	// -------------- Draw Ground Grid ------------ //
-	mvpMatrix.scale(0.1, 0.1, 0.1);
-	
-	gl.uniformMatrix4fv(g_modelMatLoc, false, mvpMatrix.elements);
-	drawGroundGrid();
 	// --------------------------------------------- //
 }
 
@@ -2095,11 +2061,11 @@ function animate() {
 	if (L_arrowActive && !R_arrowActive) {
 		// Just L arrow pressed ---> Rotate left by 1 degree
 		console.log("Left arrow pressed: Rotate left!");
-		theta_H += 1*Math.PI/180;
+		theta_H += 0.8*Math.PI/180;
 	} else if (!L_arrowActive && R_arrowActive) {
 		// Just R arrow pressed ---> Rotate right by 1 degree
 		console.log("Right arrow pressed: Rotate right!");
-		theta_H -= 1*Math.PI/180;
+		theta_H -= 0.8*Math.PI/180;
 	}
 	// Ensure theta_H bounded between -pi and pi
 	if (theta_H > Math.PI) {
@@ -2113,12 +2079,12 @@ function animate() {
 		// Just U arrow pressed ---> Rotate up
 		console.log("Up arrow pressed: Rotate up!");
 		// Rotate by 1 degree and limit to within PI/2
-		theta_V += 1*Math.PI/180;
+		theta_V += 0.5*Math.PI/180;
 		theta_V = Math.min(theta_V, Math.PI/2);
 	} else if (!U_arrowActive && D_arrowActive) {
 		console.log("Down arrow pressed: Rotate down!");
 		// Rotate by 1 degree and limit to within PI/2
-		theta_V -= 1*Math.PI/180
+		theta_V -= 0.5*Math.PI/180
 		theta_V = Math.max(theta_V, -Math.PI/2);
 	}
 	
@@ -2178,17 +2144,6 @@ function animate() {
 		return;
 	}
 
-	/*
-	if (W_keyActive && !S_keyActive) {
-		// Just W key pressed ---> Accelerate
-		g_angle01Rate = Math.min(g_angle01Rate+g_angle01Accel, g_angle01RateMax)
-	} else if (!W_keyActive && S_keyActive) {
-		// Just S key pressed ---> Deccelerate
-		g_angle01Rate = Math.max(g_angle01Rate-g_angle01Accel, g_angle01RateMin)
-	}
-	// If neither/both UP and DOWN arrow pressed maintain current speed
-	*/
-
 	var newAngle = g_angle01 + (g_angle01Rate * elapsed) / 1000.0;
 	if(newAngle > 180.0) newAngle = newAngle - 360.0;
 	if(newAngle <-180.0) newAngle = newAngle + 360.0;
@@ -2231,128 +2186,7 @@ function angleSubmit() {
 
 
 
-//===================Mouse and Keyboard event-handling Callbacks
-
-function myMouseDown(ev) {
-//==============================================================================
-// Called when user PRESSES down any mouse button;
-// 									(Which button?    console.log('ev.button='+ev.button);   )
-// 		ev.clientX, ev.clientY == mouse pointer location, but measured in webpage 
-//		pixels: left-handed coords; UPPER left origin; Y increases DOWNWARDS (!)  
-
-// Create right-handed 'pixel' coords with origin at WebGL canvas LOWER left;
-	console.log('ev.button=' + ev.button);
-	if (ev.target == document.getElementById('webgl')) {
-		// Only set mouse dragging flag if clicked within the CVV canvas
-		g_isDrag = true;
-
-  		var rect = ev.target.getBoundingClientRect();	// get canvas corners in pixels
-  		var xp = ev.clientX - rect.left;									// x==0 at canvas left edge
-  		var yp = g_canvas.height - (ev.clientY - rect.top);	// y==0 at canvas bottom edge
-  
-		// Convert to Canonical View Volume (CVV) coordinates too:
-  		var x = (xp - g_canvas.width/2)  / 		// move origin to center of canvas and
-  							 (g_canvas.width/2);			// normalize canvas to -1 <= x < +1,
-		var y = (yp - g_canvas.height/2) /		//										 -1 <= y < +1.
-							 (g_canvas.height/2);
-
-		// Record where mouse dragging began
-		g_xMclik = x;			
-		g_yMclik = y;
-		// report on console
-		console.log('Mouse At: '+x.toFixed(5)+', '+y.toFixed(5));
-	}
-
-
-};
-
-function dragQuat(xdrag, ydrag) {
-//==============================================================================
-// Called when user drags mouse by amount measured in CVV coords
-var res = 5;
-var qTmp = new Quaternion(0,0,0,1);		// Temporary quaternion object
-
-// Project drag in canvas to XY plane in CVV
-var xAxisRot = -ydrag*Math.sin(theta_H) + xdrag*-Math.sin(theta_V)*Math.cos(theta_H);
-var yAxisRot = ydrag*Math.cos(theta_H) + xdrag*-Math.sin(theta_V)*Math.sin(theta_H);
-var zAxisRot = xdrag*Math.abs(Math.cos(theta_V));
-
-var dist = Math.sqrt(xdrag**2 + ydrag**2);
-qNew.setFromAxisAngle(xAxisRot + 0.0001, yAxisRot + 0.0001, zAxisRot + 0.0001, dist*150.0);
-//qNew.setFromAxisAngle(-ydrag + 0.0001, xdrag + 0.0001, 0.0, dist*150.0);
-
-qTmp.multiply(qNew, qTot);	// Aply new rotation to current rotation
-
-qTot.copy(qTmp);
-}
-
-function myMouseMove(ev) {
-//==============================================================================
-// Called when user MOVES the mouse with a button already pressed down.
-// 									(Which button?   console.log('ev.button='+ev.button);    )
-// 		ev.clientX, ev.clientY == mouse pointer location, but measured in webpage 
-//		pixels: left-handed coords; UPPER left origin; Y increases DOWNWARDS (!)  
-
-	if(g_isDrag==false) return;				// IGNORE all mouse-moves except 'dragging'
-
-	// Create right-handed 'pixel' coords with origin at WebGL canvas LOWER left;
-  	var rect = ev.target.getBoundingClientRect();			// get canvas corners in pixels
-  	var xp = ev.clientX - rect.left;						// x==0 at canvas left edge
-	var yp = g_canvas.height - (ev.clientY - rect.top);		// y==0 at canvas bottom edge
-  
-	// Convert to Canonical View Volume (CVV) coordinates too:
-  	var x = (xp - g_canvas.width/2)  / 				// move origin to center of canvas and
-  						 (g_canvas.width/2);		// normalize canvas to -1 <= x < +1,
-	var y = (yp - g_canvas.height/2) /				// -1 <= y < +1.
-							 (g_canvas.height/2);
-
-	// find how far we dragged the mouse:
-	g_xMdragTot += (x - g_xMclik);					// Accumulate change-in-mouse-position,&
-	g_yMdragTot += (y - g_yMclik);
-
-	dragQuat(x-g_xMclik, y-g_yMclik);		// Update quaternions
-
-	// Report new mouse position & how far we moved on webpage:
-	console.log('Mouse At: '+x.toFixed(5)+', '+y.toFixed(5));
-	console.log('Mouse Drag: '+(x - g_xMclik).toFixed(5)+', '+(y - g_yMclik).toFixed(5));
-
-	// Make NEXT drag-measurement from here.
-	g_xMclik = x;		
-	g_yMclik = y;
-};
-
-function myMouseUp(ev) {
-//==============================================================================
-// Called when user RELEASES mouse button pressed previously.
-
-// Create right-handed 'pixel' coords with origin at WebGL canvas LOWER left;
-
-  	var rect = ev.target.getBoundingClientRect();	// get canvas corners in pixels
-  	var xp = ev.clientX - rect.left;									// x==0 at canvas left edge
-	var yp = g_canvas.height - (ev.clientY - rect.top);	// y==0 at canvas bottom edge
-//  console.log('myMouseUp  (pixel coords): xp,yp=\t',xp,',\t',yp);
-  
-	// Convert to Canonical View Volume (CVV) coordinates too:
- 	var x = (xp - g_canvas.width/2)  / 		// move origin to center of canvas and
-  						 (g_canvas.width/2);			// normalize canvas to -1 <= x < +1,
-	var y = (yp - g_canvas.height/2) /		//										 -1 <= y < +1.
-							 (g_canvas.height/2);
-	console.log('myMouseUp  (CVV coords  ):  x, y=\t',x,',\t',y);
-	
-	if (g_isDrag) {
-		// Accumulate any final bit of dragging we did
-		g_xMdragTot += (x - g_xMclik);
-		g_yMdragTot += (y - g_yMclik);
-
-		// Update quaternion
-		dragQuat(x-g_xMclik, y-g_yMclik);
-
-		// Report new mouse position:
-		console.log('Mouse At: '+x.toFixed(5)+', '+y.toFixed(5));
-		console.log('myMouseUp: g_xMdragTot,g_yMdragTot =',g_xMdragTot,',\t',g_yMdragTot);
-	}
-	g_isDrag = false;
-};
+//=================== Keyboard event-handling Callbacks
 
 function myKeyDown(kev) {
 //===============================================================================
