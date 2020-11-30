@@ -125,7 +125,6 @@ var g_yMclik=0.0;
 var g_xMdragTot=0.0;	// total (accumulated) mouse-drag amounts (in CVV coords).
 var g_yMdragTot=0.0;   
 
-
 g_worldMat = new Matrix4();
 
 var worldBox = new VBObox0();	// Holds ground-plane grid and axis marker

@@ -248,6 +248,7 @@ VBObox0.prototype.adjust = function() {
     
     this.ModelMat.setIdentity();
     // THIS DOESN'T WORK!!  this.ModelMatrix = g_worldMat;
+
     this.ModelMat.set(g_worldMat);	// use our global, shared camera.
     // READY to draw in 'world' coord axes.
         
@@ -394,22 +395,33 @@ function VBObox1() {
     this.VERT_SRC =
       'precision highp float;\n' +	// req'd in OpenGL ES if we use 'float'
       //
-      'uniform mat4 u_ModelMat0;\n' +
-      'attribute vec4 a_Pos0;\n' +
-      'attribute vec3 a_Colr0;\n'+
-      'varying vec3 v_Colr0;\n' +
+      'uniform mat4 u_ModelMat1;\n' +
+      'uniform mat4 u_MvpMat1;\n' +
+      'uniform mat4 u_NormalMat1;\n' +
+      //
+      'attribute vec4 a_Pos1;\n' +
+      'attribute vec4 a_Norm1;\n' +
+      'attribute vec3 a_Colr1;\n' +
+      //
+      'varying vec3 v_Colr1;\n' +
+      'varying vec3 v_Normal;\n' +
+      //
+      'varying vec4 v_Pos1;\n' +
+      'varying vec3 v_Norm1;\n' +
       //
       'void main() {\n' +
-      '  gl_Position = u_ModelMat0 * a_Pos0;\n' +
-      '	 v_Colr0 = a_Colr0;\n' +
+      '  gl_Position = u_MvpMat1 * a_Pos1;\n' +
+      '  v_Pos1 = u_ModelMat1 * a_Pos1;\n' +
+      '  v_Norm1 = normalize(vec3(u_NormalMat1 * a_Norm1));\n' +
+      '	 v_Colr1 = a_Colr1;\n' +
       ' }\n';
     
     // FRAGMENT SHADER
     this.FRAG_SRC =  
       'precision mediump float;\n' +
-      'varying vec3 v_Colr0;\n' +
+      'varying vec3 v_Colr1;\n' +
       'void main() {\n' +
-      '  gl_FragColor = vec4(v_Colr0, 1.0);\n' + 
+      '  gl_FragColor = vec4(v_Colr1, 1.0);\n' + 
       '}\n';
 
 
@@ -452,33 +464,39 @@ function VBObox1() {
                                       // at the same attrib for the next vertex. 
     
     // Attribute sizes
-    this.vboFcount_a_Pos0 =  4;    // # of floats in the VBO needed to store the
+    this.vboFcount_a_Pos1 =  4;    // # of floats in the VBO needed to store the
                                     // attribute named a_Pos0. (4: x,y,z,w values)
-    this.vboFcount_a_Colr0 = 3;   // # of floats for this attrib (r,g,b values) 
-    console.assert((this.vboFcount_a_Pos0 +     // check the size of each and
-                    this.vboFcount_a_Colr0) *   // every attribute in our VBO
+    this.vboFcount_a_Colr1 = 3;   // # of floats for this attrib (r,g,b values) 
+    console.assert((this.vboFcount_a_Pos1 +     // check the size of each and
+                    this.vboFcount_a_Colr1) *   // every attribute in our VBO
                     this.FSIZE == this.vboStride, // for agreeement with'stride'
-                    "Uh oh! VBObox0.vboStride disagrees with attribute-size values!");
+                    "Uh oh! VBObox1.vboStride disagrees with attribute-size values!");
     
     // Attribute offsets  
-    this.vboOffset_a_Pos0 = 0;    // # of bytes from START of vbo to the START
+    this.vboOffset_a_Pos1 = 0;    // # of bytes from START of vbo to the START
                                       // of 1st a_Pos0 attrib value in vboContents[]
-    this.vboOffset_a_Colr0 = this.vboFcount_a_Pos0 * this.FSIZE;    
+    this.vboOffset_a_Colr1 = this.vboFcount_a_Pos1 * this.FSIZE;    
                                     // (4 floats * bytes/float) 
                                     // # of bytes from START of vbo to the START
                                     // of 1st a_Colr0 attrib value in vboContents[]
+
     // GPU memory locations:
-    this.vboLoc;									// GPU Location for Vertex Buffer Object, 
-                                      // returned by gl.createBuffer() function call
-    this.shaderLoc;								// GPU Location for compiled Shader-program  
-                                        // set by compile/link of VERT_SRC and FRAG_SRC.
+    this.vboLoc;		// GPU Location for Vertex Buffer Object, 
+                        // returned by gl.createBuffer() function call
+    this.shaderLoc;	    // GPU Location for compiled Shader-program  
+                        // set by compile/link of VERT_SRC and FRAG_SRC.
+
     // Attribute locations in our shaders:
-    this.a_PosLoc;								// GPU location for 'a_Pos0' attribute
-    this.a_ColrLoc;								// GPU location for 'a_Colr0' attribute
+    this.a_PosLoc;		// GPU location for 'a_Pos0' attribute
+    this.a_ColrLoc;		// GPU location for 'a_Colr0' attribute
     
     // Uniform locations &values in our shaders
     this.ModelMat = new Matrix4();	// Transforms CVV axes to model axes.
-    this.u_ModelMatLoc;							// GPU location for u_ModelMat uniform
+    this.MvpMat = new Matrix4();
+    this.NormalMat = new Matrix4();  
+
+    this.u_ModelMatLoc;				// GPU location for uniform
+    this.u_NormalMatLoc;
 }
    
 
@@ -488,7 +506,7 @@ VBObox1.prototype.init = function() {
     this.shaderLoc = createProgram(gl, this.VERT_SRC, this.FRAG_SRC);
     if (!this.shaderLoc) {
         console.log(this.constructor.name + 
-                                '.init() failed to create executable Shaders on the GPU. Bye!');
+                        '.init() failed to create executable Shaders on the GPU. Bye!');
         return;
     }
     
@@ -498,41 +516,54 @@ VBObox1.prototype.init = function() {
     this.vboLoc = gl.createBuffer();	
     if (!this.vboLoc) {
         console.log(this.constructor.name + 
-                                '.init() failed to create VBO in GPU. Bye!'); 
+                        '.init() failed to create VBO in GPU. Bye!'); 
         return;
     }
 
-    gl.bindBuffer(gl.ARRAY_BUFFER,	      // GLenum 'target' for this GPU buffer 
+    gl.bindBuffer(gl.ARRAY_BUFFER,      // GLenum 'target' for this GPU buffer 
                     this.vboLoc);		
 
-    gl.bufferData(gl.ARRAY_BUFFER, 			  // GLenum target(same as 'bindBuffer()')
-                    this.vboContents, 		// JavaScript Float32Array
+    gl.bufferData(gl.ARRAY_BUFFER,      // GLenum target(same as 'bindBuffer()')
+                    this.vboContents, 	// JavaScript Float32Array
                     gl.STATIC_DRAW);	
     
       // c1) Find All Attributes:---------------------------------------------------
-    this.a_PosLoc = gl.getAttribLocation(this.shaderLoc, 'a_Pos0');
+    this.a_PosLoc = gl.getAttribLocation(this.shaderLoc, 'a_Pos1');
     if(this.a_PosLoc < 0) {
         console.log(this.constructor.name + 
-                                '.init() Failed to get GPU location of attribute a_Pos0');
+                        '.init() Failed to get GPU location of attribute a_Pos1');
         return -1;	// error exit.
     }
     
-    this.a_ColrLoc = gl.getAttribLocation(this.shaderLoc, 'a_Colr0');
+    this.a_ColrLoc = gl.getAttribLocation(this.shaderLoc, 'a_Colr1');
     
     if(this.a_ColrLoc < 0) {
         console.log(this.constructor.name + 
-                                '.init() failed to get the GPU location of attribute a_Colr0');
+                        '.init() failed to get the GPU location of attribute a_Colr1');
         return -1;	// error exit.
     }
       
       // c2) Find All Uniforms:-----------------------------------------------------
       //Get GPU storage location for each uniform var used in our shader programs: 
-    this.u_ModelMatLoc = gl.getUniformLocation(this.shaderLoc, 'u_ModelMat0');
+    this.u_ModelMatLoc = gl.getUniformLocation(this.shaderLoc, 'u_ModelMat1');
     if (!this.u_ModelMatLoc) { 
         console.log(this.constructor.name + 
-                                '.init() failed to get GPU location for u_ModelMat1 uniform');
-        return;
+                        '.init() failed to get GPU location for u_ModelMat1 uniform');
+        return -1;
     }  
+
+    this.u_MvpMatLoc = gl.getUniformLocation(this.shaderLoc, 'u_MvpMat1');
+    if (!this.u_MvpMatLoc) {
+        console.log(this.constructor.name +
+                        '.init() failed to get GPU location for u_MvpMat1 uniform');
+    }
+
+    this.u_NormalMatLoc = gl.getUniformLocation(this.shaderLoc, 'u_NormalMat1');
+    if (!this.u_NormalMatLoc) {
+        console.log(this.constructor.name +
+                        '.init() failed to get GPU location for u_NormalMat1 uniform');
+        return -1;
+    }
 }
    
 
@@ -546,20 +577,20 @@ VBObox1.prototype.switchToMe = function() {
     // Point to a_Pos
     gl.vertexAttribPointer(
         this.a_PosLoc,
-        this.vboFcount_a_Pos0,
+        this.vboFcount_a_Pos1,
         gl.FLOAT,
         false,
         this.vboStride,
-        this.vboOffset_a_Pos0);
+        this.vboOffset_a_Pos1);
 
     // Point to a_Colr
     gl.vertexAttribPointer(
         this.a_ColrLoc, 
-        this.vboFcount_a_Colr0, 
+        this.vboFcount_a_Colr1, 
         gl.FLOAT, 
         false, 
         this.vboStride, 
-        this.vboOffset_a_Colr0);
+        this.vboOffset_a_Colr1);
                                   
     // --Enable this assignment of each of these attributes to its' VBO source:
     gl.enableVertexAttribArray(this.a_PosLoc);
@@ -602,20 +633,20 @@ VBObox1.prototype.adjust = function() {
     }  
         // Adjust values for our uniforms,
     
-    this.ModelMat.setIdentity();
-    // THIS DOESN'T WORK!!  this.ModelMatrix = g_worldMat;
-    this.ModelMat.set(g_worldMat);	// use our global, shared camera.
-    // READY to draw in 'world' coord axes.
+
+    this.ModelMat.setRotate(90, 0, 1, 0);
+
+    this.MvpMat.set(g_worldMat);
+    this.MvpMat.multiply(this.ModelMat);
+
+    this.NormalMat.setInverseOf(this.ModelMat);
+    this.NormalMat.transpose();
         
-    //  this.ModelMat.rotate(g_angleNow0, 0, 0, 1);	  // rotate drawing axes,
-    //  this.ModelMat.translate(0.35, 0, 0);							// then translate them.
-      //  Transfer new uniforms' values to the GPU:-------------
-      // Send  new 'ModelMat' values to the GPU's 'u_ModelMat1' uniform: 
-    gl.uniformMatrix4fv(this.u_ModelMatLoc,	// GPU location of the uniform
-                        false, 				// use matrix transpose instead?
-                        this.ModelMat.elements);	// send data from Javascript.
-      // Adjust the attributes' stride and offset (if necessary)
-      // (use gl.vertexAttribPointer() calls and gl.enableVertexAttribArray() calls)
+    
+    // Send  new 'ModelMat' values to the GPU's uniform
+    gl.uniformMatrix4fv(this.u_ModelMatLoc, false, this.ModelMat.elements);	
+    gl.uniformMatrix4fv(this.u_MvpMatLoc, false, this.MvpMat.elements);
+    gl.uniformMatrix4fv(this.u_NormalMatLoc, false, this.NormalMat.elements);
 }
     
 
@@ -629,25 +660,24 @@ VBObox1.prototype.draw = function() {
                         '.draw() call you needed to call this.switchToMe()!!');
     }  
 
-    pushMatrix(this.ModelMat);
+    //pushMatrix(this.ModelMat);
 
     // Draw sphere
     this.ModelMat.translate(1, 1, 0);
     gl.uniformMatrix4fv(this.u_ModelMatLoc, false, this.ModelMat.elements);
     drawSphere();
-    //
 
-    this.ModelMat = popMatrix();
+    //this.ModelMat = popMatrix();
 
+    /*
     // Draw rotating rings
-    this.ModelMat.scale(0.2, 0.2, 0.2);     // Shrink model
+    this.ModelMat.scale(0.2, 0.2, 0.2);             // Shrink model
     this.ModelMat.rotate(90, 0, 1, 0);              // Rotate Upright
     this.ModelMat.translate(-1.2, 1.0, 0.0);        // Move out of ground
     this.ModelMat.rotate(g_angle_gyro, 1, 0, 0);    // Spin around center
     gl.uniformMatrix4fv(this.u_ModelMatLoc, false, this.ModelMat.elements);
     drawHollowCylinder();
-    //
-
+    
     var scale = 1.0/1.2;
     for(i=0; i<5; i++) {
         this.ModelMat.rotate(g_angle_gyro, 1-i%2, i%2, 0);
@@ -655,6 +685,7 @@ VBObox1.prototype.draw = function() {
         gl.uniformMatrix4fv(this.u_ModelMatLoc, false, this.ModelMat.elements);
         drawHollowCylinder();
     }
+    */
 }
    
 
@@ -861,59 +892,43 @@ function makeSphere() {
     var isLast = 0;
     var isFirst = 1;
 
-        for(s=0; s<slices; s++) {	// for each slice of the sphere,
-            // find sines & cosines for top and bottom of this slice
-            if(s==0) {
-                isFirst = 1;	// skip 1st vertex of 1st slice.
-                cos0 = 1.0; 	// initialize: start at north pole.
-                sin0 = 0.0;
-            }
-            else {					// otherwise, new top edge == old bottom edge
-                isFirst = 0;	
-                cos0 = cos1;
-                sin0 = sin1;
-            }								// & compute sine,cosine for new bottom edge.
-
-            cos1 = Math.cos((s+1)*sliceAngle);
-            sin1 = Math.sin((s+1)*sliceAngle);
-            // go around the entire slice, generating TRIANGLE_STRIP verts
-            // (Note we don't initialize j; grows with each new attrib,vertex, and slice)
-            if(s==slices-1) isLast=1;	// skip last vertex of last slice.
-            for(v=isFirst; v< 2*sliceVerts-isLast; v++, j+=floatsPerVertex) {	
-                if (v%2==0) { 
-                    sphVerts[j  ] = sin0 * Math.cos(Math.PI*(v)/sliceVerts); 	
-                    sphVerts[j+1] = sin0 * Math.sin(Math.PI*(v)/sliceVerts);	
-                    sphVerts[j+2] = cos0;		
-                    sphVerts[j+3] = 1.0;			
-                } else {
-                    sphVerts[j  ] = sin1 * Math.cos(Math.PI*(v-1)/sliceVerts);		// x
-                    sphVerts[j+1] = sin1 * Math.sin(Math.PI*(v-1)/sliceVerts);		// y
-                    sphVerts[j+2] = cos1;																				// z
-                    sphVerts[j+3] = 1.0;																				// w.		
-                }
-
-                sphVerts[j+4] = sphColr[0];
-                sphVerts[j+5] = sphColr[1];
-                sphVerts[j+6] = sphColr[2];
-                /*
-                if(s==0) {	// finally, set some interesting colors for vertices:
-                    sphVerts[j+4]=topColr[0]; 
-                    sphVerts[j+5]=topColr[1]; 
-                    sphVerts[j+6]=topColr[2];	
-                    }
-                else if(s==slices-1) {
-                    sphVerts[j+4]=botColr[0]; 
-                    sphVerts[j+5]=botColr[1]; 
-                    sphVerts[j+6]=botColr[2];	
-                }
-                else {
-                    sphVerts[j+4]=Math.random();// equColr[0]; 
-                    sphVerts[j+5]=Math.random();// equColr[1]; 
-                    sphVerts[j+6]=Math.random();// equColr[2];					
-                }
-                */
-            }
+    for(s=0; s<slices; s++) {	// for each slice of the sphere,
+        // find sines & cosines for top and bottom of this slice
+        if(s==0) {
+            isFirst = 1;	// skip 1st vertex of 1st slice.
+            cos0 = 1.0; 	// initialize: start at north pole.
+            sin0 = 0.0;
         }
+        else {					// otherwise, new top edge == old bottom edge
+            isFirst = 0;	
+            cos0 = cos1;
+            sin0 = sin1;
+        }								// & compute sine,cosine for new bottom edge.
+
+        cos1 = Math.cos((s+1)*sliceAngle);
+        sin1 = Math.sin((s+1)*sliceAngle);
+        // go around the entire slice, generating TRIANGLE_STRIP verts
+        // (Note we don't initialize j; grows with each new attrib,vertex, and slice)
+        if(s==slices-1) isLast=1;	// skip last vertex of last slice.
+        for(v=isFirst; v< 2*sliceVerts-isLast; v++, j+=floatsPerVertex) {
+            // Position	
+            if (v%2==0) { 
+                sphVerts[j  ] = sin0 * Math.cos(Math.PI*(v)/sliceVerts); 	
+                sphVerts[j+1] = sin0 * Math.sin(Math.PI*(v)/sliceVerts);	
+                sphVerts[j+2] = cos0;		
+                sphVerts[j+3] = 1.0;			
+            } else {
+                sphVerts[j  ] = sin1 * Math.cos(Math.PI*(v-1)/sliceVerts);		// x
+                sphVerts[j+1] = sin1 * Math.sin(Math.PI*(v-1)/sliceVerts);		// y
+                sphVerts[j+2] = cos1;																				// z
+                sphVerts[j+3] = 1.0;																				// w.		
+            }
+            // Color
+            sphVerts[j+4] = sphColr[0];
+            sphVerts[j+5] = sphColr[1];
+            sphVerts[j+6] = sphColr[2];
+        }
+    }
 }
 
 function drawSphere() {
