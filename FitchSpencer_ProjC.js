@@ -158,61 +158,8 @@ function main() {
 	// Specify the color for clearing <canvas>
 	gl.clearColor(0.25, 0.2, 0.25, 1.0);
 
-	var tick = function() {
-		requestAnimationFrame(tick, g_canvas)
-		drawAll();
-	};
 	tick();
 }
-
-function drawAll() {
-	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-	
-	setCamera();
-	animate();
-	worldBox.switchToMe();
-	worldBox.adjust();
-	worldBox.draw();
-}
-
-	
-	/*
-  	// Initialize shaders
-  	if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) {
-    	console.log('Failed to intialize shaders.');
-    	return;
-  	}
-
-  	// Initialize a Vertex Buffer in the graphics system to hold our vertices
-  	g_maxVerts = initVertexBuffer(gl);  
-  	if (g_maxVerts < 0) {
-   		console.log('Failed to set the vertex information');
-    	return;
-  	}
-
-	// Add keyboard event listeners
-	window.addEventListener("keydown", myKeyDown, false);
-	window.addEventListener("keyup", myKeyUp, false);	
-	
-	
-
-	// NEW!! Enable 3D depth-test when drawing: don't over-draw at any pixel 
-	// unless the new Z value is closer to the eye than the old one..
-		  
-	
-	// Get handle to graphics system's storage location of u_ModelMatrix
-	g_modelMatLoc = gl.getUniformLocation(gl.program, 'u_ModelMatrix');
-	if (!g_modelMatLoc) { 
-    	console.log('Failed to get the storage location of u_ModelMatrix');
-    	return;
-	}
-
-	// Draw canvas at size based on browser window
-	resizeCanvas();
-	tick();
-	*/
-	
-//}
 
 
 function resizeCanvas() {
@@ -225,7 +172,7 @@ function resizeCanvas() {
 
 }
 
-/*
+
 // ANIMATION: create 'tick' variable whose value is this function:
 //----------------- 
 function tick() {
@@ -259,7 +206,129 @@ function tick() {
     									// Request that the browser re-draw the webpage
     									// (causes webpage to endlessly re-draw itself)
 };
-*/
+
+function drawAll() {
+	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+	
+	setCamera();
+	animate();
+	worldBox.switchToMe();
+	worldBox.adjust();
+	worldBox.draw();
+}
+
+function setCamera() {
+	// -- PERSPECTIVE Viewport -- //
+	gl.viewport(0,
+		0,
+		g_canvas.width,
+		g_canvas.height);
+
+	
+	// Define viewport aspect ratio
+	var vpAspect = g_canvas.width / g_canvas.height;
+
+	// Define perspective parameters	
+	var FOV = 30.0;
+	var zNear = 1.0;
+	var zFar = 20.0;
+	
+	updateCamera();
+
+	g_worldMat.setPerspective(
+		FOV,		// FOVY: top-to-bottom vertical image angle
+		vpAspect,	// Image Aspect Ratio
+		zNear,		// Camera z-near distance 	(nearest distance to camera we render)
+		zFar);		// Camera z-far distance	(farthest distance from camera we render)
+
+	g_worldMat.lookAt(
+		e_x, e_y, e_z,		// Camera location
+		L_x, L_y, L_z,		// Look-at point
+		0 ,  0 ,  1 );		// View UP vector
+}
+
+function updateCamera() {
+	// ---- Pitch Adjustments ---- //
+	// Horizontal rotation
+	if (L_arrowActive && !R_arrowActive) {
+		// Just L arrow pressed ---> Rotate left by 1 degree
+		console.log("Left arrow pressed: Rotate left!");
+		theta_H += 0.6*Math.PI/180;
+	} else if (!L_arrowActive && R_arrowActive) {
+		// Just R arrow pressed ---> Rotate right by 1 degree
+		console.log("Right arrow pressed: Rotate right!");
+		theta_H -= 0.6*Math.PI/180;
+	}
+	// Ensure theta_H bounded between -pi and pi
+	if (theta_H > Math.PI) {
+		theta_H -= 2*Math.PI;
+	} else if (theta_H < -Math.PI) {
+		theta_H += 2*Math.PI;
+	}
+
+	// Vertical rotation
+	if (U_arrowActive && !D_arrowActive) {
+		// Just U arrow pressed ---> Rotate up
+		console.log("Up arrow pressed: Rotate up!");
+		// Rotate by 1 degree and limit to within PI/2
+		theta_V += 0.5*Math.PI/180;
+		theta_V = Math.min(theta_V, Math.PI/2);
+	} else if (!U_arrowActive && D_arrowActive) {
+		console.log("Down arrow pressed: Rotate down!");
+		// Rotate by 1 degree and limit to within PI/2
+		theta_V -= 0.5*Math.PI/180
+		theta_V = Math.max(theta_V, -Math.PI/2);
+	}
+	
+	// Update lookat position
+	L_x = e_x + Math.cos(theta_H);
+	L_y = e_y + Math.sin(theta_H);
+	L_z = e_z + Math.sin(theta_V);
+
+
+
+	// Move forward
+	if (W_keyActive && !S_keyActive) {
+		// Just W key pressed ---> Move forward
+		console.log("W key pressed: Move forward!");
+		e_x += Math.cos(theta_H)/10;
+		e_y += Math.sin(theta_H)/10;
+		e_z += Math.sin(theta_V)/10;
+
+		L_x += Math.cos(theta_H)/10;
+		L_y += Math.sin(theta_H)/10;
+		L_z += Math.sin(theta_V)/10;
+		
+	} else if (!W_keyActive && S_keyActive) {
+		// Just S key pressed ---> Move back
+		console.log("S key pressed: Move backwards!");
+		e_x -= Math.cos(theta_H)/10;
+		e_y -= Math.sin(theta_H)/10;
+		e_z -= Math.sin(theta_V)/10;
+		
+		L_x -= Math.cos(theta_H)/10;
+		L_y -= Math.sin(theta_H)/10;
+		L_z -= Math.sin(theta_V)/10;
+	}
+
+	if (A_keyActive && !D_keyActive) {
+		// Just A key pressed ---> Strafe left
+		console.log("A key pressed: Strafe left!");
+		e_x += Math.cos(theta_H+(Math.PI/2))/10;
+		e_y += Math.sin(theta_H+(Math.PI/2))/10;
+		
+		L_x += Math.cos(theta_H+(Math.PI/2))/10;
+		L_y += Math.sin(theta_H+(Math.PI/2))/10;
+	} else if (!A_keyActive && D_keyActive) {
+		// Just D key pressed ---> Strafe right
+		console.log("D key pressed: Strafe right!");
+		e_x -= Math.cos(theta_H+(Math.PI/2))/10;
+		e_y -= Math.sin(theta_H+(Math.PI/2))/10;
+		
+		L_x -= Math.cos(theta_H+(Math.PI/2))/10;
+		L_y -= Math.sin(theta_H+(Math.PI/2))/10;
+	}
+}
 
 
 function initVertexBuffer() {
@@ -1694,7 +1763,6 @@ function makeGroundGrid() {
 
 
 //// --------------- Part 1 - Plane Drawing Functions ------------------ ////
-
 function DrawPlaneBody() {
 	// Draw 3D Body
 	gl.drawArrays(gl.TRIANGLES, 0, 63);
@@ -1889,81 +1957,7 @@ function drawHollowCylinder() {
 }
 //// ---------------------------------------------------------------- ////
 
-/*
-//// ---------- Draw Axis Maker --------------------------------------- ////
-function drawAxisMarker() {
-	gl.drawArrays(gl.LINES,
-				  axisStart/floatsPerVertex,
-				  axisVerts.length/floatsPerVertex);
-}
-//// ------------------------------------------------------------------ ////
 
-
-//// ----------- Draw Ground ------------------------------------------ ////
-function drawGroundGrid() {
-	gl.drawArrays(gl.LINES, 
-				  gndStart/floatsPerVertex,
-				  gndVerts.length/floatsPerVertex);
-}
-//// ------------------------------------------------------------------ ////
-*/
-
-
-function setCamera() {
-	// -- PERSPECTIVE Viewport -- //
-	gl.viewport(0,
-		0,
-		g_canvas.width,
-		g_canvas.height);
-
-		
-	// Define viewport aspect ratio
-	var vpAspect = g_canvas.width / g_canvas.height;
-
-	// Define perspective parameters	
-	var FOV = 30.0;
-	var zNear = 1.0;
-	var zFar = 20.0;
-	
-	g_worldMat.setPerspective(
-		FOV,		// FOVY: top-to-bottom vertical image angle
-		vpAspect,	// Image Aspect Ratio
-		zNear,		// Camera z-near distance 	(nearest distance to camera we render)
-		zFar);		// Camera z-far distance	(farthest distance from camera we render)
-
-	g_worldMat.lookAt(
-		e_x, e_y, e_z,		// Camera location
-		L_x, L_y, L_z,		// Look-at point
-		0 ,  0 ,  1 );		// View UP vector
-}
-
-
-/*
-function drawAll() {
-//==============================================================================
-  // Clear <canvas>  colors AND the depth buffer
-	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-	mvpMatrix.setIdentity();	// Define 'world-space' coords
-
-	setCamera();
-
-	// Draw origin axis marker
-	gl.uniformMatrix4fv(g_modelMatLoc, false, mvpMatrix.elements);
-	drawAxisMarker();
-
-	pushMatrix(mvpMatrix);
-
-	// Draw ground grid
-	mvpMatrix.scale(0.1, 0.1, 0.1);
-	gl.uniformMatrix4fv(g_modelMatLoc, false, mvpMatrix.elements);
-	drawGroundGrid();
-	
-	mvpMatrix = popMatrix();
-
-	drawScene();
-}
-*/
 
 function drawScene() {
 	pushMatrix(mvpMatrix);
@@ -2094,86 +2088,7 @@ function animate() {
 	}
 	// If both/neither X and C pressed, then maintain current opening
 
-	// ---- Pitch Adjustments ---- //
-	// Horizontal rotation
-	if (L_arrowActive && !R_arrowActive) {
-		// Just L arrow pressed ---> Rotate left by 1 degree
-		console.log("Left arrow pressed: Rotate left!");
-		theta_H += 0.8*Math.PI/180;
-	} else if (!L_arrowActive && R_arrowActive) {
-		// Just R arrow pressed ---> Rotate right by 1 degree
-		console.log("Right arrow pressed: Rotate right!");
-		theta_H -= 0.8*Math.PI/180;
-	}
-	// Ensure theta_H bounded between -pi and pi
-	if (theta_H > Math.PI) {
-		theta_H -= 2*Math.PI;
-	} else if (theta_H < -Math.PI) {
-		theta_H += 2*Math.PI;
-	}
-
-	// Vertical rotation
-	if (U_arrowActive && !D_arrowActive) {
-		// Just U arrow pressed ---> Rotate up
-		console.log("Up arrow pressed: Rotate up!");
-		// Rotate by 1 degree and limit to within PI/2
-		theta_V += 0.5*Math.PI/180;
-		theta_V = Math.min(theta_V, Math.PI/2);
-	} else if (!U_arrowActive && D_arrowActive) {
-		console.log("Down arrow pressed: Rotate down!");
-		// Rotate by 1 degree and limit to within PI/2
-		theta_V -= 0.5*Math.PI/180
-		theta_V = Math.max(theta_V, -Math.PI/2);
-	}
 	
-	// Update lookat position
-	L_x = e_x + Math.cos(theta_H);
-	L_y = e_y + Math.sin(theta_H);
-	L_z = e_z + Math.sin(theta_V);
-
-
-
-	// Move forward
-	if (W_keyActive && !S_keyActive) {
-		// Just W key pressed ---> Move forward
-		console.log("W key pressed: Move forward!");
-		e_x += Math.cos(theta_H)/10;
-		e_y += Math.sin(theta_H)/10;
-		e_z += Math.sin(theta_V)/10;
-
-		L_x += Math.cos(theta_H)/10;
-		L_y += Math.sin(theta_H)/10;
-		L_z += Math.sin(theta_V)/10;
-		
-	} else if (!W_keyActive && S_keyActive) {
-		// Just S key pressed ---> Move back
-		console.log("S key pressed: Move backwards!");
-		e_x -= Math.cos(theta_H)/10;
-		e_y -= Math.sin(theta_H)/10;
-		e_z -= Math.sin(theta_V)/10;
-		
-		L_x -= Math.cos(theta_H)/10;
-		L_y -= Math.sin(theta_H)/10;
-		L_z -= Math.sin(theta_V)/10;
-	}
-
-	if (A_keyActive && !D_keyActive) {
-		// Just A key pressed ---> Strafe left
-		console.log("A key pressed: Strafe left!");
-		e_x += Math.cos(theta_H+(Math.PI/2))/10;
-		e_y += Math.sin(theta_H+(Math.PI/2))/10;
-		
-		L_x += Math.cos(theta_H+(Math.PI/2))/10;
-		L_y += Math.sin(theta_H+(Math.PI/2))/10;
-	} else if (!A_keyActive && D_keyActive) {
-		// Just D key pressed ---> Strafe right
-		console.log("D key pressed: Strafe right!");
-		e_x -= Math.cos(theta_H+(Math.PI/2))/10;
-		e_y -= Math.sin(theta_H+(Math.PI/2))/10;
-		
-		L_x -= Math.cos(theta_H+(Math.PI/2))/10;
-		L_y -= Math.sin(theta_H+(Math.PI/2))/10;
-	}
 
 
 	
