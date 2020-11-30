@@ -125,11 +125,10 @@ var g_yMclik=0.0;
 var g_xMdragTot=0.0;	// total (accumulated) mouse-drag amounts (in CVV coords).
 var g_yMdragTot=0.0;   
 
-var qNew = new Quaternion(0,0,0,1);		// most-recent mouse drag's rotation
-var qTot = new Quaternion(0,0,0,1);		// 'current' orientation (made from qNew)
-var quatMatrix = new Matrix4();			// Rotation matrix (made from latest qTot)
 
 
+worldBox = new VBObox0();	// Holds ground-plane grid and axis marker
+g_worldMat = new Matrix4();
 
 function main() {
 //==============================================================================
@@ -139,8 +138,45 @@ function main() {
 	if (!gl) {
     	console.log('Failed to get the rendering context for WebGL');
     	return;
-  	}
+	}
+	  
+	// Add keyboard event listeners
+	window.addEventListener("keydown", myKeyDown, false);
+	window.addEventListener("keyup", myKeyUp, false);	
 
+	gl.enable(gl.DEPTH_TEST); 
+
+	// Resize canvas
+	resizeCanvas();
+
+	// Init VBO 
+	worldBox.init(gl);
+
+	// Set perspective camera
+	setCamera();
+
+	// Specify the color for clearing <canvas>
+	gl.clearColor(0.25, 0.2, 0.25, 1.0);
+
+	var tick = function() {
+		requestAnimationFrame(tick, g_canvas)
+		drawAll();
+	};
+	tick();
+}
+
+function drawAll() {
+	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+	
+	setCamera();
+	animate();
+	worldBox.switchToMe();
+	worldBox.adjust();
+	worldBox.draw();
+}
+
+	
+	/*
   	// Initialize shaders
   	if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) {
     	console.log('Failed to intialize shaders.');
@@ -158,12 +194,11 @@ function main() {
 	window.addEventListener("keydown", myKeyDown, false);
 	window.addEventListener("keyup", myKeyUp, false);	
 	
-	// Specify the color for clearing <canvas>
-	gl.clearColor(0.25, 0.2, 0.25, 1.0);
+	
 
 	// NEW!! Enable 3D depth-test when drawing: don't over-draw at any pixel 
 	// unless the new Z value is closer to the eye than the old one..
-	gl.enable(gl.DEPTH_TEST); 	  
+		  
 	
 	// Get handle to graphics system's storage location of u_ModelMatrix
 	g_modelMatLoc = gl.getUniformLocation(gl.program, 'u_ModelMatrix');
@@ -175,8 +210,9 @@ function main() {
 	// Draw canvas at size based on browser window
 	resizeCanvas();
 	tick();
+	*/
 	
-}
+//}
 
 
 function resizeCanvas() {
@@ -189,7 +225,7 @@ function resizeCanvas() {
 
 }
 
-
+/*
 // ANIMATION: create 'tick' variable whose value is this function:
 //----------------- 
 function tick() {
@@ -223,6 +259,7 @@ function tick() {
     									// Request that the browser re-draw the webpage
     									// (causes webpage to endlessly re-draw itself)
 };
+*/
 
 
 function initVertexBuffer() {
@@ -1852,7 +1889,7 @@ function drawHollowCylinder() {
 }
 //// ---------------------------------------------------------------- ////
 
-
+/*
 //// ---------- Draw Axis Maker --------------------------------------- ////
 function drawAxisMarker() {
 	gl.drawArrays(gl.LINES,
@@ -1869,7 +1906,7 @@ function drawGroundGrid() {
 				  gndVerts.length/floatsPerVertex);
 }
 //// ------------------------------------------------------------------ ////
-
+*/
 
 
 function setCamera() {
@@ -1888,20 +1925,20 @@ function setCamera() {
 	var zNear = 1.0;
 	var zFar = 20.0;
 	
-	mvpMatrix.setPerspective(
+	g_worldMat.setPerspective(
 		FOV,		// FOVY: top-to-bottom vertical image angle
 		vpAspect,	// Image Aspect Ratio
 		zNear,		// Camera z-near distance 	(nearest distance to camera we render)
 		zFar);		// Camera z-far distance	(farthest distance from camera we render)
 
-	mvpMatrix.lookAt(
+	g_worldMat.lookAt(
 		e_x, e_y, e_z,		// Camera location
 		L_x, L_y, L_z,		// Look-at point
 		0 ,  0 ,  1 );		// View UP vector
 }
 
 
-
+/*
 function drawAll() {
 //==============================================================================
   // Clear <canvas>  colors AND the depth buffer
@@ -1914,7 +1951,7 @@ function drawAll() {
 	// Draw origin axis marker
 	gl.uniformMatrix4fv(g_modelMatLoc, false, mvpMatrix.elements);
 	drawAxisMarker();
-	
+
 	pushMatrix(mvpMatrix);
 
 	// Draw ground grid
@@ -1926,6 +1963,7 @@ function drawAll() {
 
 	drawScene();
 }
+*/
 
 function drawScene() {
 	pushMatrix(mvpMatrix);
@@ -2139,7 +2177,7 @@ function animate() {
 
 
 	
-  	// If currently paused, do not update plane animations
+  	// If currently paused, do not update automatic animations
   	if (Plane_paused) {
 		return;
 	}
