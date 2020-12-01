@@ -399,6 +399,7 @@ function VBObox1() {
         'uniform vec3 u_LightColor;\n' +
         'uniform vec3 u_LightPosition;\n' +
         'uniform vec3 u_AmbientLight;\n' + 
+        'uniform vec3 u_Look1;\n' +
         //
         'attribute vec4 a_Pos1;\n' +
         'attribute vec3 a_Colr1;\n' +
@@ -417,9 +418,14 @@ function VBObox1() {
         '   float nDotL = max(dot(lightVec, normVec), 0.0);\n' +
         '   vec3 diffuse = vec3(0.8, 0.8, 0.8) * a_Colr1 * nDotL;\n' +
         '   vec3 ambient = vec3(0.2, 0.2, 0.2) * a_Colr1;\n' +
-        '   v_Colr1 = vec4(diffuse + ambient, 1.0);\n' +
-        //'   float lambertian = max(dot(normVec, lightVec), 0.0);\n' +
-        //'   v_Colr1 = vec4(0.5*a_Colr1 + 0.5*dot(normVec, lightVec), 1.0);\n' +
+        //
+        '   vec3 R = reflect(-lightVec, normVec);\n' +
+        '   vec3 V = normalize(-u_Look1);\n' +
+        '   float specAngle = max(dot(R, V) ,0.0);\n' +
+        '   float specConst = pow(specAngle, 80.0);\n' +
+        '   vec3 specular = specConst * vec3(1.0, 1.0, 1.0);\n' +
+        //
+        '   v_Colr1 = vec4(diffuse + ambient + specular, 1.0);\n' +
         '}\n';
         
     
@@ -574,6 +580,10 @@ VBObox1.prototype.init = function() {
                         '.init() failed to get the GPU location of attribute a_Norm1');
         return -1;	// error exit.
     }
+
+    
+
+
       // c2) Find All Uniforms:-----------------------------------------------------
       //Get GPU storage location for each uniform var used in our shader programs: 
     this.u_MvpMatLoc = gl.getUniformLocation(this.shaderLoc, 'u_MvpMat1');
@@ -595,6 +605,13 @@ VBObox1.prototype.init = function() {
         console.log(this.constructor.name +
                         '.init() failed to get GPU location for u_NormalMat1 uniform');
         return -1;
+    }
+
+    this.u_LookLoc = gl.getUniformLocation(this.shaderLoc, 'u_Look1');
+    if(this.u_LookLoc < 0) {
+        console.log(this.constructor.name + 
+                        '.init() failed to get the GPU location of  u_Look1 uniform');
+        return -1;	// error exit.
     }
 }
    
@@ -701,10 +718,13 @@ VBObox1.prototype.updateUniforms = function() {
     this.NormalMat.setInverseOf(this.ModelMat);
     this.NormalMat.transpose();
 
-    // Send  new 'ModelMat' values to the GPU's uniform
+    // Send  new Matrix values to the GPU's uniform
     gl.uniformMatrix4fv(this.u_MvpMatLoc, false, this.MvpMat.elements);	
     gl.uniformMatrix4fv(this.u_ModelMatLoc, false, this.ModelMat.elements);
     gl.uniformMatrix4fv(this.u_NormalMatLoc, false, this.NormalMat.elements);
+
+    // Send view vector to GPU's uniform
+    gl.uniform3f(this.u_LookLoc, L_x-e_x, L_y-e_y, L_z-e_z);
 }
     
 
