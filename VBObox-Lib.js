@@ -401,6 +401,8 @@ function VBObox1() {
         'uniform vec3 u_AmbientLight;\n' + 
         'uniform vec3 u_Look1;\n' +
         //
+        'uniform float u_LightCode;\n' +
+        //
         'attribute vec4 a_Pos1;\n' +
         'attribute vec3 a_Colr1;\n' +
         'attribute vec3 a_Norm1;\n' +
@@ -413,16 +415,25 @@ function VBObox1() {
         '   vec4 transVec = u_NormalMat1 * vec4(a_Norm1, 0.0);\n' +
         '   vec3 normVec = normalize(transVec.xyz);\n' +
         '   vec4 vertexPosition = u_ModelMat1 * a_Pos1;\n' +
-        '   vec3 lightVec = normalize(vec3(0.0, 0.0, 0.0) - vec3(vertexPosition));\n' +
+        '   vec3 lightVec = normalize(vec3(0.0, 0.0, 1.0) - vec3(vertexPosition));\n' +
         //
         '   float nDotL = max(dot(lightVec, normVec), 0.0);\n' +
         '   vec3 diffuse = vec3(0.8, 0.8, 0.8) * a_Colr1 * nDotL;\n' +
         '   vec3 ambient = vec3(0.2, 0.2, 0.2) * a_Colr1;\n' +
         //
-        '   vec3 R = reflect(-lightVec, normVec);\n' +
+        '   float specConst = 0.0;\n' +
         '   vec3 V = normalize(-u_Look1);\n' +
-        '   float specAngle = max(dot(R, V) ,0.0);\n' +
-        '   float specConst = pow(specAngle, 80.0);\n' +
+        '   if (u_LightCode == 1.0) {\n' +
+                // Phong lighting
+        '       vec3 R = reflect(-lightVec, normVec);\n' +
+        '       float specAngle = max(dot(R, V), 0.0);\n' +
+        '       specConst = pow(specAngle, 80.0);\n' +
+        '   } else {\n' +
+                // Blinn-phong lighting
+        '       vec3 H = normalize(lightVec + V);\n' +
+        '       float specAngle = max(dot(H, normVec), 0.0);\n' +
+        '       specConst = pow(specAngle, 80.0);\n' +
+        '   };\n' +
         '   vec3 specular = specConst * vec3(1.0, 1.0, 1.0);\n' +
         //
         '   v_Colr1 = vec4(diffuse + ambient + specular, 1.0);\n' +
@@ -613,6 +624,13 @@ VBObox1.prototype.init = function() {
                         '.init() failed to get the GPU location of  u_Look1 uniform');
         return -1;	// error exit.
     }
+
+    this.u_LightCodeLoc = gl.getUniformLocation(this.shaderLoc, 'u_LightCode')
+    if(this.u_LightCodeLoc < 0) {
+        console.log(this.constructor.name + 
+                        '.init() failed to get the GPU location of  u_LightCode uniform');
+        return -1;	// error exit.
+    }
 }
    
 
@@ -725,6 +743,9 @@ VBObox1.prototype.updateUniforms = function() {
 
     // Send view vector to GPU's uniform
     gl.uniform3f(this.u_LookLoc, L_x-e_x, L_y-e_y, L_z-e_z);
+
+    // Determine lighting type
+    gl.uniform1f(this.u_LightCodeLoc, 0.0);
 }
     
 
@@ -738,7 +759,8 @@ VBObox1.prototype.draw = function() {
                         '.draw() call you needed to call this.switchToMe()!!');
     }  
 
-    //pushMatrix(this.MvpMat);
+    pushMatrix(this.MvpMat);
+    pushMatrix(this.ModelMat);
 
     // Draw sphere
     this.MvpMat.translate(1, 1, 0.5);
@@ -750,9 +772,22 @@ VBObox1.prototype.draw = function() {
     this.updateUniforms();
     drawSphere();
 
-    /*
+    this.ModelMat = popMatrix();
     this.MvpMat = popMatrix();
 
+    // Draw second sphere
+    this.MvpMat.translate(-1, 0, 0.5);
+    this.ModelMat.translate(1, 1, 0.5);
+    this.MvpMat.scale(0.5, 0.5, 0.5);
+    this.ModelMat.scale(0.5, 0.5, 0.5);
+    this.MvpMat.rotate(g_angle_gyro, 0, 0, 1);
+    this.ModelMat.rotate(g_angle_gyro, 0, 0, 1);
+    this.updateUniforms();
+    drawSphere();
+
+
+
+    /*
     // Draw rotating rings
     this.MvpMat.translate(-0.5, 0.5, 0.0)
     this.MvpMat.scale(0.2, 0.2, 0.2);             // Shrink model
@@ -770,6 +805,7 @@ VBObox1.prototype.draw = function() {
         drawHollowCylinder();
     }
     */
+    
     
 }
    

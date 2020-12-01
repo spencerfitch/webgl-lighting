@@ -273,11 +273,11 @@ function updateCamera() {
 	// Horizontal rotation
 	if (L_arrowActive && !R_arrowActive) {
 		// Just L arrow pressed ---> Rotate left by 1 degree
-		console.log("Left arrow pressed: Rotate left!");
+		//console.log("Left arrow pressed: Rotate left!");
 		theta_H += 0.6*Math.PI/180;
 	} else if (!L_arrowActive && R_arrowActive) {
 		// Just R arrow pressed ---> Rotate right by 1 degree
-		console.log("Right arrow pressed: Rotate right!");
+		//console.log("Right arrow pressed: Rotate right!");
 		theta_H -= 0.6*Math.PI/180;
 	}
 	// Ensure theta_H bounded between -pi and pi
@@ -290,12 +290,12 @@ function updateCamera() {
 	// Vertical rotation
 	if (U_arrowActive && !D_arrowActive) {
 		// Just U arrow pressed ---> Rotate up
-		console.log("Up arrow pressed: Rotate up!");
+		//console.log("Up arrow pressed: Rotate up!");
 		// Rotate by 1 degree and limit to within PI/2
 		theta_V += 0.5*Math.PI/180;
 		theta_V = Math.min(theta_V, Math.PI/2);
 	} else if (!U_arrowActive && D_arrowActive) {
-		console.log("Down arrow pressed: Rotate down!");
+		//console.log("Down arrow pressed: Rotate down!");
 		// Rotate by 1 degree and limit to within PI/2
 		theta_V -= 0.5*Math.PI/180
 		theta_V = Math.max(theta_V, -Math.PI/2);
@@ -311,7 +311,7 @@ function updateCamera() {
 	// Move forward
 	if (W_keyActive && !S_keyActive) {
 		// Just W key pressed ---> Move forward
-		console.log("W key pressed: Move forward!");
+		//console.log("W key pressed: Move forward!");
 		e_x += Math.cos(theta_H)/10;
 		e_y += Math.sin(theta_H)/10;
 		e_z += Math.sin(theta_V)/10;
@@ -322,7 +322,7 @@ function updateCamera() {
 		
 	} else if (!W_keyActive && S_keyActive) {
 		// Just S key pressed ---> Move back
-		console.log("S key pressed: Move backwards!");
+		//console.log("S key pressed: Move backwards!");
 		e_x -= Math.cos(theta_H)/10;
 		e_y -= Math.sin(theta_H)/10;
 		e_z -= Math.sin(theta_V)/10;
@@ -334,7 +334,7 @@ function updateCamera() {
 
 	if (A_keyActive && !D_keyActive) {
 		// Just A key pressed ---> Strafe left
-		console.log("A key pressed: Strafe left!");
+		//console.log("A key pressed: Strafe left!");
 		e_x += Math.cos(theta_H+(Math.PI/2))/10;
 		e_y += Math.sin(theta_H+(Math.PI/2))/10;
 		
@@ -342,7 +342,7 @@ function updateCamera() {
 		L_y += Math.sin(theta_H+(Math.PI/2))/10;
 	} else if (!A_keyActive && D_keyActive) {
 		// Just D key pressed ---> Strafe right
-		console.log("D key pressed: Strafe right!");
+		//console.log("D key pressed: Strafe right!");
 		e_x -= Math.cos(theta_H+(Math.PI/2))/10;
 		e_y -= Math.sin(theta_H+(Math.PI/2))/10;
 		
@@ -2040,5 +2040,5 @@ function myKeyUp(kev) {
 			break;
 
 	}
-	console.log('myKeyUp()--code='+kev.code+' released.');
+	//console.log('myKeyUp()--code='+kev.code+' released.');
 }
