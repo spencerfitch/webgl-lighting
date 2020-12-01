@@ -78,7 +78,7 @@ var g_angle_wingpitchMin = -30;		// Minimum rotation angle for wing-pitch (updat
 var g_angle_wingpitchMax = 30;		// Maximum rotation angle for wing-pitch (updated by user slider)
 
 var g_angle_gyro = 0;				// Angle of rotating ring
-var g_angle_gyroRate = 90;			// Rate of rotation for rotating ring (deg/sec)
+var g_angle_gyroRate = 30;			// Rate of rotation for rotating ring (deg/sec)
 
 // Globals to know if WASD or arrow keys pressed for camera controls
 var W_keyActive = false;
@@ -129,6 +129,7 @@ g_worldMat = new Matrix4();
 
 var worldBox = new VBObox0();	// Holds ground-plane grid and axis marker
 var gouraudBox = new VBObox1();
+//var phongBox = new VBObox2();
 
 var VBO0Active = true;
 var VBO1Active = true;
@@ -229,6 +230,11 @@ function drawAll() {
 		gouraudBox.switchToMe();
 		gouraudBox.adjust();
 		gouraudBox.draw();
+		/*
+		phongBox.switchToMe();
+		phongBox.adjust();
+		phongBox.draw();
+		*/
 	}
 }
 

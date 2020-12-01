@@ -1,5 +1,5 @@
 var floatsPerVertex = 7;
-
+var floatsPerVertexNorm = 10;
 
 
 function VBObox0() {
@@ -24,7 +24,6 @@ function VBObox0() {
       'void main() {\n' +
       '  gl_FragColor = vec4(v_Colr0, 1.0);\n' + 
       '}\n';
-
 
 
     // -------- INIT VERTEX BUFFER ---------- //
@@ -393,40 +392,63 @@ function drawAxisMarker() {
 function VBObox1() {
     // VERTEX SHADER
     this.VERT_SRC =
-      'precision highp float;\n' +	// req'd in OpenGL ES if we use 'float'
-      //
-      'uniform mat4 u_ModelMat1;\n' +
-      'uniform mat4 u_MvpMat1;\n' +
-      'uniform mat4 u_NormalMat1;\n' +
-      //
-      'attribute vec4 a_Pos1;\n' +
-      'attribute vec4 a_Norm1;\n' +
-      'attribute vec3 a_Colr1;\n' +
-      //
-      'varying vec3 v_Colr1;\n' +
-      'varying vec3 v_Normal;\n' +
-      //
-      'varying vec4 v_Pos1;\n' +
-      'varying vec3 v_Norm1;\n' +
-      //
-      'void main() {\n' +
-      '  gl_Position = u_MvpMat1 * a_Pos1;\n' +
-      '  v_Pos1 = u_ModelMat1 * a_Pos1;\n' +
-      '  v_Norm1 = normalize(vec3(u_NormalMat1 * a_Norm1));\n' +
-      '	 v_Colr1 = a_Colr1;\n' +
-      ' }\n';
+        'uniform mat4 u_MvpMat1;\n' +
+        'uniform mat4 u_ModelMat1;\n' +
+        'uniform mat4 u_NormalMat1;\n' +
+        //
+        'uniform vec3 u_LightColor;\n' +
+        'uniform vec3 u_LightPosition;\n' +
+        'uniform vec3 u_AmbientLight;\n' + 
+        //
+        'attribute vec4 a_Pos1;\n' +
+        'attribute vec3 a_Colr1;\n' +
+        'attribute vec3 a_Norm1;\n' +
+        //
+        'varying vec4 v_Colr1;\n' +
+        //
+        'void main() {\n' +
+        '   gl_Position = u_MvpMat1 * a_Pos1;\n' +
+        //
+        '   vec4 transVec = u_NormalMat1 * vec4(a_Norm1, 0.0);\n' +
+        '   vec3 normVec = normalize(transVec.xyz);\n' +
+        '   vec4 vertexPosition = u_ModelMat1 * a_Pos1;\n' +
+        '   vec3 lightVec = normalize(vec3(0.0, 0.0, 0.0) - vec3(vertexPosition));\n' +
+        //
+        '   float nDotL = max(dot(lightVec, normVec), 0.0);\n' +
+        '   vec3 diffuse = vec3(0.8, 0.8, 0.8) * a_Colr1 * nDotL;\n' +
+        '   vec3 ambient = vec3(0.2, 0.2, 0.2) * a_Colr1;\n' +
+        '   v_Colr1 = vec4(diffuse + ambient, 1.0);\n' +
+        //'   float lambertian = max(dot(normVec, lightVec), 0.0);\n' +
+        //'   v_Colr1 = vec4(0.5*a_Colr1 + 0.5*dot(normVec, lightVec), 1.0);\n' +
+        '}\n';
+        
     
     // FRAGMENT SHADER
-    this.FRAG_SRC =  
-      'precision mediump float;\n' +
-      'varying vec3 v_Colr1;\n' +
-      'void main() {\n' +
-      '  gl_FragColor = vec4(v_Colr1, 1.0);\n' + 
-      '}\n';
+    this.FRAG_SRC =
+        'precision mediump float;\n' +
+        'varying vec4 v_Colr1;\n' +
+        'void main() {\n' +
+        '   gl_FragColor = v_Colr1;\n' +
+        '}\n';
 
 
 
     // -------- INIT VERTEX BUFFER ---------- //
+    makeSphere();
+
+    var mySiz = sphVerts.length
+    this.vboVerts = mySiz / floatsPerVertexNorm;
+
+    var vboVertices = new Float32Array(mySiz);
+
+    sphStart = 0;
+    for(i=0, j=0; j<sphVerts.length; i++, j++) {
+        vboVertices[i] = sphVerts[j];
+    }
+
+    this.vboContents = vboVertices;
+
+    /*
     makeHollowCylinder();
     makeSphere();
     
@@ -445,6 +467,7 @@ function VBObox1() {
     }
 
     this.vboContents = vboVertices;
+    */
     // -------------------------------------- //
     
 
@@ -467,8 +490,10 @@ function VBObox1() {
     this.vboFcount_a_Pos1 =  4;    // # of floats in the VBO needed to store the
                                     // attribute named a_Pos0. (4: x,y,z,w values)
     this.vboFcount_a_Colr1 = 3;   // # of floats for this attrib (r,g,b values) 
+    this.vboFcount_a_Norm1 = 3;
     console.assert((this.vboFcount_a_Pos1 +     // check the size of each and
-                    this.vboFcount_a_Colr1) *   // every attribute in our VBO
+                    this.vboFcount_a_Colr1 +
+                    this.vboFcount_a_Norm1) *   // every attribute in our VBO
                     this.FSIZE == this.vboStride, // for agreeement with'stride'
                     "Uh oh! VBObox1.vboStride disagrees with attribute-size values!");
     
@@ -479,6 +504,7 @@ function VBObox1() {
                                     // (4 floats * bytes/float) 
                                     // # of bytes from START of vbo to the START
                                     // of 1st a_Colr0 attrib value in vboContents[]
+    this.vboOffset_a_Norm1 = this.vboOffset_a_Colr1 + (this.vboFcount_a_Colr1 * this.FSIZE);
 
     // GPU memory locations:
     this.vboLoc;		// GPU Location for Vertex Buffer Object, 
@@ -489,13 +515,14 @@ function VBObox1() {
     // Attribute locations in our shaders:
     this.a_PosLoc;		// GPU location for 'a_Pos0' attribute
     this.a_ColrLoc;		// GPU location for 'a_Colr0' attribute
+    this.a_NormLoc;
     
     // Uniform locations &values in our shaders
     this.ModelMat = new Matrix4();	// Transforms CVV axes to model axes.
     this.MvpMat = new Matrix4();
     this.NormalMat = new Matrix4();  
-
-    this.u_ModelMatLoc;				// GPU location for uniform
+	
+    this.u_MvpMatLoc;       // GPU location for uniform
     this.u_NormalMatLoc;
 }
    
@@ -536,27 +563,32 @@ VBObox1.prototype.init = function() {
     }
     
     this.a_ColrLoc = gl.getAttribLocation(this.shaderLoc, 'a_Colr1');
-    
     if(this.a_ColrLoc < 0) {
         console.log(this.constructor.name + 
                         '.init() failed to get the GPU location of attribute a_Colr1');
         return -1;	// error exit.
     }
-      
+    this.a_NormLoc = gl.getAttribLocation(this.shaderLoc, 'a_Norm1')
+    if(this.a_NormLoc < 0) {
+        console.log(this.constructor.name + 
+                        '.init() failed to get the GPU location of attribute a_Norm1');
+        return -1;	// error exit.
+    }
       // c2) Find All Uniforms:-----------------------------------------------------
       //Get GPU storage location for each uniform var used in our shader programs: 
+    this.u_MvpMatLoc = gl.getUniformLocation(this.shaderLoc, 'u_MvpMat1');
+    if (!this.u_MvpMatLoc) { 
+        console.log(this.constructor.name + 
+                        '.init() failed to get GPU location for u_MvpMat1 uniform');
+        return -1;
+    }  
+
     this.u_ModelMatLoc = gl.getUniformLocation(this.shaderLoc, 'u_ModelMat1');
     if (!this.u_ModelMatLoc) { 
         console.log(this.constructor.name + 
                         '.init() failed to get GPU location for u_ModelMat1 uniform');
         return -1;
     }  
-
-    this.u_MvpMatLoc = gl.getUniformLocation(this.shaderLoc, 'u_MvpMat1');
-    if (!this.u_MvpMatLoc) {
-        console.log(this.constructor.name +
-                        '.init() failed to get GPU location for u_MvpMat1 uniform');
-    }
 
     this.u_NormalMatLoc = gl.getUniformLocation(this.shaderLoc, 'u_NormalMat1');
     if (!this.u_NormalMatLoc) {
@@ -591,10 +623,19 @@ VBObox1.prototype.switchToMe = function() {
         false, 
         this.vboStride, 
         this.vboOffset_a_Colr1);
+
+    gl.vertexAttribPointer(
+        this.a_NormLoc,
+        this.vboFcount_a_Norm1,
+        gl.FLOAT,
+        false,
+        this.vboStride,
+        this.vboOffset_a_Norm1);
                                   
     // --Enable this assignment of each of these attributes to its' VBO source:
     gl.enableVertexAttribArray(this.a_PosLoc);
     gl.enableVertexAttribArray(this.a_ColrLoc);
+    gl.enableVertexAttribArray(this.a_NormLoc);
 }
 
 
@@ -635,6 +676,7 @@ VBObox1.prototype.adjust = function() {
     
 
     this.MvpMat.set(g_worldMat);
+    this.ModelMat.setIdentity();
     this.updateUniforms();
 
     /*
@@ -655,16 +697,13 @@ VBObox1.prototype.adjust = function() {
 
 
 VBObox1.prototype.updateUniforms = function() {
-    this.ModelMat.setIdentity();
-
-    this.MvpMat.multiply(this.ModelMat);
     
     this.NormalMat.setInverseOf(this.ModelMat);
     this.NormalMat.transpose();
 
     // Send  new 'ModelMat' values to the GPU's uniform
-    gl.uniformMatrix4fv(this.u_ModelMatLoc, false, this.ModelMat.elements);	
-    gl.uniformMatrix4fv(this.u_MvpMatLoc, false, this.MvpMat.elements);
+    gl.uniformMatrix4fv(this.u_MvpMatLoc, false, this.MvpMat.elements);	
+    gl.uniformMatrix4fv(this.u_ModelMatLoc, false, this.ModelMat.elements);
     gl.uniformMatrix4fv(this.u_NormalMatLoc, false, this.NormalMat.elements);
 }
     
@@ -682,11 +721,15 @@ VBObox1.prototype.draw = function() {
     //pushMatrix(this.MvpMat);
 
     // Draw sphere
-    this.MvpMat.translate(1, 1, 0);
+    this.MvpMat.translate(1, 1, 0.5);
+    this.ModelMat.translate(1, 1, 0.5);
     this.MvpMat.scale(0.5, 0.5, 0.5);
+    this.ModelMat.scale(0.5, 0.5, 0.5);
+    this.MvpMat.rotate(g_angle_gyro, 0, 0, 1);
+    this.ModelMat.rotate(g_angle_gyro, 0, 0, 1);
     this.updateUniforms();
     drawSphere();
-    
+
     /*
     this.MvpMat = popMatrix();
 
@@ -903,7 +946,7 @@ function makeSphere() {
     var sliceAngle = Math.PI/slices;	// lattitude angle spanned by one slice.
     
     // Create a (global) array to hold this sphere's vertices:
-    sphVerts = new Float32Array(  ((slices * 2* sliceVerts) -2) * floatsPerVertex);
+    sphVerts = new Float32Array(  ((slices * 2* sliceVerts) -2) * floatsPerVertexNorm);
     
     var cos0 = 0.0;	
     var sin0 = 0.0;
@@ -932,7 +975,7 @@ function makeSphere() {
         // go around the entire slice, generating TRIANGLE_STRIP verts
         // (Note we don't initialize j; grows with each new attrib,vertex, and slice)
         if(s==slices-1) isLast=1;	// skip last vertex of last slice.
-        for(v=isFirst; v< 2*sliceVerts-isLast; v++, j+=floatsPerVertex) {
+        for(v=isFirst; v< 2*sliceVerts-isLast; v++, j+=floatsPerVertexNorm) {
             // Position	
             if (v%2==0) { 
                 sphVerts[j  ] = sin0 * Math.cos(Math.PI*(v)/sliceVerts); 	
@@ -949,13 +992,415 @@ function makeSphere() {
             sphVerts[j+4] = sphColr[0];
             sphVerts[j+5] = sphColr[1];
             sphVerts[j+6] = sphColr[2];
+            
+            // Normal
+            sphVerts[j+7] = sphVerts[j];
+            sphVerts[j+8] = sphVerts[j+1];
+            sphVerts[j+9] = sphVerts[j+2];
         }
     }
 }
 
 function drawSphere() {
     gl.drawArrays(gl.TRIANGLE_STRIP,
-        sphStart/floatsPerVertex,
-        sphVerts.length/floatsPerVertex);
+        sphStart/floatsPerVertexNorm,
+        sphVerts.length/floatsPerVertexNorm);
 }
 //// ------------------------------------------------------------------ ////
+
+
+
+
+
+
+
+
+
+
+
+
+
+//// --------------- PHONG ------------------------------------------- ////
+function VBObox2() {
+    // VERTEX SHADER
+    this.VERT_SRC =
+        'precision highp float;\n' +	// req'd in OpenGL ES if we use 'float'
+        //
+        'struct MatlT {\n' +
+        '       vec3 emit;\n' +
+        '       vec3 ambi;\n' +
+        '       vec3 diff;\n' +
+        '       vec3 spec;\n' +
+        '       int shiny;\n' +
+        '   };\n' +
+        //
+        'uniform MatlT u_MatlSet[1];\n' +
+        'uniform mat4 u_ModelMat1;\n' +
+        'uniform mat4 u_MvpMat1;\n' +
+        'uniform mat4 u_NormalMat1;\n' +
+        //
+        'attribute vec4 a_Pos1;\n' +
+        'attribute vec4 a_Norm1;\n' +
+        'attribute vec3 a_Colr1;\n' +
+        //
+        'varying vec3 v_Kd;\n' +
+        //
+        'varying vec4 v_Pos1;\n' +
+        'varying vec3 v_Norm1;\n' +
+        //
+        'void main() {\n' +
+        '  gl_Position = u_MvpMat1 * a_Pos1;\n' +
+        '  v_Pos1 = u_ModelMat1 * a_Pos1;\n' +
+        '  v_Norm1 = normalize(vec3(u_NormalMat1 * a_Norm1));\n' +
+        '  v_Kd = u_MatlSet[0].diff;\n' +
+        ' }\n';
+    
+    // FRAGMENT SHADER
+    this.FRAG_SRC =  
+        'precision highp float;\n' +
+        'precision highp int;\n' +
+        //
+        'struct LampT {\n' +
+        '       vec3 pos;\n' +
+        '       vec3 ambi;\n' +
+        '       vec3 diff;\n' +
+        '       vec3 spec;\n' +
+        '   };\n' +
+        //
+        'struct MatlT {\n' +
+        '       vec3 emit;\n' +
+        '       vec3 ambi;\n' +
+        '       vec3 diff;\n' +
+        '       vec3 spec;\n' +
+        '       int shiny;\n' +
+        '   };\n' +
+        //
+        'uniform LampT u_LampSet[1];\n' +
+        'uniform MatlT u_MatlSet[1];\n' +
+        //
+        'uniform vec3 u_eyePosWorld;\n' +
+        //
+        'varying vec3 v_Norm1;\n' +
+        'varying vec4 v_Pos1;\n' +
+        'varying vec3 v_Kd;\n' +
+        //
+        'void main() {\n' +
+        '   vec3 normal = normalize(v_Norm1);\n' +
+        '   vec3 lightDirection = normalize(u_LampSet[0].pos - v_Position.xyz);\n' +
+        '   vec3 eyeDirection = normalize(u_eyePosWorld - v_Position.xyz);\n'+
+        '   float nDotL = max(dot(lightDirection, normal), 0.0);\n' +
+        '   vec3 H = normalize(lightDirection + eyeDirection); \n' +
+        '   float nDotH = max(dot(H, normal), 0.0);\n' +
+        '   float e64 = pow(nDotH, float(u_MatlSet[0].shiny));\n' +
+        '   vec3 emissive = u_MatlSet[0].emit;\n' +
+        '   vec3 ambient = u_LampSet[0].ambi * u_MatlSet[0].ambi;\n' +
+        '   vec3 speculr = u_LampSet[0].spec * u_MatlSet[0].spec * e64;\n' +
+        '   gl_FragColor = vec4(emissive + ambient + diffuse + speculr, 1.0);\n' +
+        '}\n';
+
+
+
+    // -------- INIT VERTEX BUFFER ---------- //
+    makeHollowCylinder();
+    makeSphere();
+    
+    var mySiz = (cylVerts.length + sphVerts.length)
+    this.vboVerts = mySiz / floatsPerVertex;
+
+    var vboVertices = new Float32Array(mySiz)
+
+    cylStart = 0;
+    for(i=0,j=0; j<cylVerts.length; i++, j++) {
+        vboVertices[i] = cylVerts[j];
+    }
+    sphStart = i;
+    for(j=0; j<sphVerts.length; i++, j++) {
+        vboVertices[i] = sphVerts[j];
+    }
+
+    this.vboContents = vboVertices;
+    // -------------------------------------- //
+    
+
+
+    this.FSIZE = this.vboContents.BYTES_PER_ELEMENT;
+                                      // bytes req'd by 1 vboContents array element;
+                                                                    // (why? used to compute stride and offset 
+                                                                    // in bytes for vertexAttribPointer() calls)
+    this.vboBytes = this.vboContents.length * this.FSIZE;               
+                                    // total number of bytes stored in vboContents
+                                    // (#  of floats in vboContents array) * 
+                                    // (# of bytes/float).
+    this.vboStride = this.vboBytes / this.vboVerts; 
+                                      // (== # of bytes to store one complete vertex).
+                                      // From any attrib in a given vertex in the VBO, 
+                                      // move forward by 'vboStride' bytes to arrive 
+                                      // at the same attrib for the next vertex. 
+    
+    // Attribute sizes
+    this.vboFcount_a_Pos1 =  4;    // # of floats in the VBO needed to store the
+                                    // attribute named a_Pos0. (4: x,y,z,w values)
+    this.vboFcount_a_Colr1 = 3;   // # of floats for this attrib (r,g,b values) 
+    console.assert((this.vboFcount_a_Pos1 +     // check the size of each and
+                    this.vboFcount_a_Colr1) *   // every attribute in our VBO
+                    this.FSIZE == this.vboStride, // for agreeement with'stride'
+                    "Uh oh! VBObox1.vboStride disagrees with attribute-size values!");
+    
+    // Attribute offsets  
+    this.vboOffset_a_Pos1 = 0;    // # of bytes from START of vbo to the START
+                                      // of 1st a_Pos0 attrib value in vboContents[]
+    this.vboOffset_a_Colr1 = this.vboFcount_a_Pos1 * this.FSIZE;    
+                                    // (4 floats * bytes/float) 
+                                    // # of bytes from START of vbo to the START
+                                    // of 1st a_Colr0 attrib value in vboContents[]
+
+    // GPU memory locations:
+    this.vboLoc;		// GPU Location for Vertex Buffer Object, 
+                        // returned by gl.createBuffer() function call
+    this.shaderLoc;	    // GPU Location for compiled Shader-program  
+                        // set by compile/link of VERT_SRC and FRAG_SRC.
+
+    // Attribute locations in our shaders:
+    this.a_PosLoc;		// GPU location for 'a_Pos0' attribute
+    this.a_ColrLoc;		// GPU location for 'a_Colr0' attribute
+    
+    // Uniform locations &values in our shaders
+    this.ModelMat = new Matrix4();	// Transforms CVV axes to model axes.
+    this.MvpMat = new Matrix4();
+    this.NormalMat = new Matrix4();  
+
+    this.u_ModelMatLoc;				// GPU location for uniform
+    this.u_MvpMatLoc;
+    this.u_NormalMatLoc;
+    this.u_eyePosWorldLoc;
+
+    this.lamp = new LightsT();
+
+    var matlSel = MATL_RED_PLASTIC;
+    var matl0 = new Material(matlSel);
+}
+   
+
+VBObox2.prototype.init = function() {
+
+    // a) Compile,link,upload shaders-----------------------------------------------
+    this.shaderLoc = createProgram(gl, this.VERT_SRC, this.FRAG_SRC);
+    if (!this.shaderLoc) {
+        console.log(this.constructor.name + 
+                        '.init() failed to create executable Shaders on the GPU. Bye!');
+        return;
+    }
+    
+    gl.program = this.shaderLoc;		// (to match cuon-utils.js -- initShaders())
+    
+    // b) Create VBO on GPU, fill it------------------------------------------------
+    this.vboLoc = gl.createBuffer();	
+    if (!this.vboLoc) {
+        console.log(this.constructor.name + 
+                        '.init() failed to create VBO in GPU. Bye!'); 
+        return;
+    }
+
+    gl.bindBuffer(gl.ARRAY_BUFFER,      // GLenum 'target' for this GPU buffer 
+                    this.vboLoc);		
+
+    gl.bufferData(gl.ARRAY_BUFFER,      // GLenum target(same as 'bindBuffer()')
+                    this.vboContents, 	// JavaScript Float32Array
+                    gl.STATIC_DRAW);	
+    
+      // c1) Find All Attributes:---------------------------------------------------
+    this.a_PosLoc = gl.getAttribLocation(this.shaderLoc, 'a_Pos1');
+    if(this.a_PosLoc < 0) {
+        console.log(this.constructor.name + 
+                        '.init() Failed to get GPU location of attribute a_Pos1');
+        return -1;	// error exit.
+    }
+    
+    this.a_ColrLoc = gl.getAttribLocation(this.shaderLoc, 'a_Colr1');
+    
+    if(this.a_ColrLoc < 0) {
+        console.log(this.constructor.name + 
+                        '.init() failed to get the GPU location of attribute a_Colr1');
+        return -1;	// error exit.
+    }
+      
+      // c2) Find All Uniforms:-----------------------------------------------------
+      //Get GPU storage location for each uniform var used in our shader programs: 
+    this.u_ModelMatLoc = gl.getUniformLocation(this.shaderLoc, 'u_ModelMat1');
+    if (!this.u_ModelMatLoc) { 
+        console.log(this.constructor.name + 
+                        '.init() failed to get GPU location for u_ModelMat1 uniform');
+        return -1;
+    }  
+
+    this.u_MvpMatLoc = gl.getUniformLocation(this.shaderLoc, 'u_MvpMat1');
+    if (!this.u_MvpMatLoc) {
+        console.log(this.constructor.name +
+                        '.init() failed to get GPU location for u_MvpMat1 uniform');
+    }
+
+    this.u_NormalMatLoc = gl.getUniformLocation(this.shaderLoc, 'u_NormalMat1');
+    if (!this.u_NormalMatLoc) {
+        console.log(this.constructor.name +
+                        '.init() failed to get GPU location for u_NormalMat1 uniform');
+        return -1;
+    }
+}
+   
+
+VBObox2.prototype.switchToMe = function() {
+    // a) select our shader program:
+    gl.useProgram(this.shaderLoc);	
+      
+    gl.bindBuffer(gl.ARRAY_BUFFER,  // GLenum 'target' for this GPU buffer 
+                    this.vboLoc);   // the ID# the GPU uses for our VBO.
+    
+    // Point to a_Pos
+    gl.vertexAttribPointer(
+        this.a_PosLoc,
+        this.vboFcount_a_Pos1,
+        gl.FLOAT,
+        false,
+        this.vboStride,
+        this.vboOffset_a_Pos1);
+
+    // Point to a_Colr
+    gl.vertexAttribPointer(
+        this.a_ColrLoc, 
+        this.vboFcount_a_Colr1, 
+        gl.FLOAT, 
+        false, 
+        this.vboStride, 
+        this.vboOffset_a_Colr1);
+                                  
+    // --Enable this assignment of each of these attributes to its' VBO source:
+    gl.enableVertexAttribArray(this.a_PosLoc);
+    gl.enableVertexAttribArray(this.a_ColrLoc);
+}
+
+
+VBObox2.prototype.isReady = function() {
+    //==============================================================================
+    // Returns 'true' if our WebGL rendering context ('gl') is ready to render using
+    // this objects VBO and shader program; else return false.
+    // see: https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/getParameter
+    
+    var isOK = true;
+    
+    if(gl.getParameter(gl.CURRENT_PROGRAM) != this.shaderLoc)  {
+        console.log(this.constructor.name + 
+                                '.isReady() false: shader program at this.shaderLoc not in use!');
+        isOK = false;
+      }
+    if(gl.getParameter(gl.ARRAY_BUFFER_BINDING) != this.vboLoc) {
+        console.log(this.constructor.name + 
+                              '.isReady() false: vbo at this.vboLoc not in use!');
+        isOK = false;
+    }
+
+    return isOK;
+}
+    
+
+VBObox2.prototype.adjust = function() {
+    //==============================================================================
+    // Update the GPU to newer, current values we now store for 'uniform' vars on 
+    // the GPU; and (if needed) update each attribute's stride and offset in VBO.
+    
+      // check: was WebGL context set to use our VBO & shader program?
+    if(this.isReady()==false) {
+        console.log('ERROR! before' + this.constructor.name + 
+                        '.adjust() call you needed to call this.switchToMe()!!');
+    }  
+        // Adjust values for our uniforms,
+    
+
+    this.MvpMat.set(g_worldMat);
+    this.updateUniforms();
+
+    /*
+    this.ModelMat.setRotate(90, 0, 1, 0);
+
+    this.MvpMat.set(g_worldMat);
+    this.MvpMat.multiply(this.ModelMat);
+
+    this.NormalMat.setInverseOf(this.ModelMat);
+    this.NormalMat.transpose();
+    
+    // Send  new 'ModelMat' values to the GPU's uniform
+    gl.uniformMatrix4fv(this.u_ModelMatLoc, false, this.ModelMat.elements);	
+    gl.uniformMatrix4fv(this.u_MvpMatLoc, false, this.MvpMat.elements);
+    gl.uniformMatrix4fv(this.u_NormalMatLoc, false, this.NormalMat.elements);
+    */
+}
+
+
+VBObox2.prototype.updateUniforms = function() {
+    this.ModelMat.setIdentity();
+
+    this.MvpMat.multiply(this.ModelMat);
+    
+    this.NormalMat.setInverseOf(this.ModelMat);
+    this.NormalMat.transpose();
+
+    // Send  new 'ModelMat' values to the GPU's uniform
+    gl.uniformMatrix4fv(this.u_ModelMatLoc, false, this.ModelMat.elements);	
+    gl.uniformMatrix4fv(this.u_MvpMatLoc, false, this.MvpMat.elements);
+    gl.uniformMatrix4fv(this.u_NormalMatLoc, false, this.NormalMat.elements);
+}
+    
+
+VBObox2.prototype.draw = function() {
+    //=============================================================================
+    // Render current VBObox contents.
+    
+      // check: was WebGL context set to use our VBO & shader program?
+    if(this.isReady()==false) {
+        console.log('ERROR! before' + this.constructor.name + 
+                        '.draw() call you needed to call this.switchToMe()!!');
+    }  
+
+    //pushMatrix(this.MvpMat);
+
+    // Draw sphere
+    this.MvpMat.translate(1, 1, 0);
+    this.MvpMat.scale(0.5, 0.5, 0.5);
+    this.updateUniforms();
+    drawSphere();
+
+    /*
+    this.MvpMat = popMatrix();
+
+    // Draw rotating rings
+    this.MvpMat.translate(-0.5, 0.5, 0.0)
+    this.MvpMat.scale(0.2, 0.2, 0.2);             // Shrink model
+    this.MvpMat.rotate(90, 0, 1, 0);              // Rotate Upright
+    this.MvpMat.translate(-1.2, 0.0, 0.0);        // Move out of ground
+    this.MvpMat.rotate(g_angle_gyro, 1, 0, 0);    // Spin around center
+    this.updateUniforms();
+    drawHollowCylinder();
+    
+    var scale = 1.0/1.2;
+    for(i=0; i<5; i++) {
+        this.MvpMat.rotate(g_angle_gyro, 1-i%2, i%2, 0);
+        this.MvpMat.scale(scale, scale, scale);
+        this.updateUniforms();
+        drawHollowCylinder();
+    }
+    */
+    
+}
+   
+
+VBObox2.prototype.reload = function() {
+    //=============================================================================
+    // Over-write current values in the GPU inside our already-created VBO: use 
+    // gl.bufferSubData() call to re-transfer some or all of our Float32Array 
+    // contents to our VBO without changing any GPU memory allocations.
+    
+    gl.bufferSubData(gl.ARRAY_BUFFER, 	// GLenum target(same as 'bindBuffer()')
+                        0,                  // byte offset to where data replacement
+                                    // begins in the VBO.
+                        this.vboContents);   // the JS source-data array used to fill VBO
+   
+}
