@@ -469,7 +469,7 @@ function VBObox1() {
         //
         '   float specConst = 0.0;\n' +
         '   vec3 V = normalize(-u_Look1);\n' +
-        '   if (u_LightCode == 1.0) {\n' +
+        '   if (u_LightCode > 0.5) {\n' +
                 // Phong lighting
         '       vec3 R = reflect(-lightVec, normVec);\n' +
         '       float specAngle = max(dot(R, V), 0.0);\n' +
@@ -791,7 +791,7 @@ VBObox1.prototype.updateUniforms = function() {
     gl.uniform3f(this.u_LookLoc, L_x-e_x, L_y-e_y, L_z-e_z);
 
     // Determine lighting type
-    gl.uniform1f(this.u_LightCodeLoc, 0.0);
+    gl.uniform1f(this.u_LightCodeLoc, lightingMode);
 }
     
 
@@ -809,12 +809,10 @@ VBObox1.prototype.draw = function() {
     pushMatrix(this.ModelMat);
 
     // Draw sphere
-    this.MvpMat.translate(1, 1, 0.5);
     this.ModelMat.translate(1, 1, 0.5);
-    this.MvpMat.scale(0.5, 0.5, 0.5);
     this.ModelMat.scale(0.5, 0.5, 0.5);
-    this.MvpMat.rotate(g_angle_gyro, 0, 0, 1);
     this.ModelMat.rotate(g_angle_gyro, 0, 0, 1);
+    this.MvpMat.multiply(this.ModelMat);
     this.updateUniforms();
     drawSphere();
 
@@ -822,12 +820,10 @@ VBObox1.prototype.draw = function() {
     this.MvpMat = popMatrix();
 
     // Draw second sphere
-    this.MvpMat.translate(-1, 0, 0.5);
-    this.ModelMat.translate(1, 1, 0.5);
-    this.MvpMat.scale(0.5, 0.5, 0.5);
+    this.ModelMat.translate(-1, 0, 0.5);
     this.ModelMat.scale(0.5, 0.5, 0.5);
-    this.MvpMat.rotate(g_angle_gyro, 0, 0, 1);
     this.ModelMat.rotate(g_angle_gyro, 0, 0, 1);
+    this.MvpMat.multiply(this.ModelMat);
     this.updateUniforms();
     drawSphere();
 
@@ -1136,24 +1132,23 @@ function VBObox2() {
         '       int shiny;\n' +
         '   };\n' +
         //
-        'uniform MatlT u_MatlSet[1];\n' +
-        'uniform mat4 u_ModelMat1;\n' +
-        'uniform mat4 u_MvpMat1;\n' +
-        'uniform mat4 u_NormalMat1;\n' +
+        'attribute vec4 a_Position;\n' +
+        'attribute vec4 a_Normal;\n' +
         //
-        'attribute vec4 a_Pos1;\n' +
-        'attribute vec4 a_Norm1;\n' +
-        'attribute vec3 a_Colr1;\n' +
+        'uniform MatlT u_MatlSet[1];\n' +
+        'uniform mat4 u_ModelMat;\n' +
+        'uniform mat4 u_MvpMat;\n' +
+        'uniform mat4 u_NormalMat;\n' +
         //
         'varying vec3 v_Kd;\n' +
         //
-        'varying vec4 v_Pos1;\n' +
-        'varying vec3 v_Norm1;\n' +
+        'varying vec4 v_Position;\n' +
+        'varying vec3 v_Normal;\n' +
         //
         'void main() {\n' +
-        '  gl_Position = u_MvpMat1 * a_Pos1;\n' +
-        '  v_Pos1 = u_ModelMat1 * a_Pos1;\n' +
-        '  v_Norm1 = normalize(vec3(u_NormalMat1 * a_Norm1));\n' +
+        '  gl_Position = u_MvpMat * a_Position;\n' +
+        '  v_Pos1 = u_ModelMat * a_Position;\n' +
+        '  v_Norm1 = normalize(vec3(u_NormalMat1 * a_Normal));\n' +
         '  v_Kd = u_MatlSet[0].diff;\n' +
         ' }\n';
     
@@ -1180,18 +1175,18 @@ function VBObox2() {
         'uniform LampT u_LampSet[1];\n' +
         'uniform MatlT u_MatlSet[1];\n' +
         //
-        'uniform vec3 u_eyePosWorld;\n' +
+        'uniform vec3 u_Look;\n' +
         //
-        'varying vec3 v_Norm1;\n' +
-        'varying vec4 v_Pos1;\n' +
+        'varying vec3 v_Normal;\n' +
+        'varying vec4 v_Position;\n' +
         'varying vec3 v_Kd;\n' +
         //
         'void main() {\n' +
         '   vec3 normal = normalize(v_Norm1);\n' +
         '   vec3 lightDirection = normalize(u_LampSet[0].pos - v_Position.xyz);\n' +
-        '   vec3 eyeDirection = normalize(u_eyePosWorld - v_Position.xyz);\n'+
+        '   vec3 V = normalize(-u_Look);\n'+
         '   float nDotL = max(dot(lightDirection, normal), 0.0);\n' +
-        '   vec3 H = normalize(lightDirection + eyeDirection); \n' +
+        '   vec3 H = normalize(lightDirection + V); \n' +
         '   float nDotH = max(dot(H, normal), 0.0);\n' +
         '   float e64 = pow(nDotH, float(u_MatlSet[0].shiny));\n' +
         '   vec3 emissive = u_MatlSet[0].emit;\n' +
@@ -1276,10 +1271,10 @@ function VBObox2() {
     this.u_NormalMatLoc;
     this.u_eyePosWorldLoc;
 
-    this.lamp = new LightsT();
+    this.lamp0 = new LightsT();
 
     var matlSel = MATL_RED_PLASTIC;
-    var matl0 = new Material(matlSel);
+    this.matl0 = new Material(matlSel);
 }
    
 
@@ -1311,42 +1306,54 @@ VBObox2.prototype.init = function() {
                     gl.STATIC_DRAW);	
     
       // c1) Find All Attributes:---------------------------------------------------
-    this.a_PosLoc = gl.getAttribLocation(this.shaderLoc, 'a_Pos1');
+    this.a_PosLoc = gl.getAttribLocation(this.shaderLoc, 'a_Pos');
     if(this.a_PosLoc < 0) {
         console.log(this.constructor.name + 
                         '.init() Failed to get GPU location of attribute a_Pos1');
         return -1;	// error exit.
     }
+
     
-    this.a_ColrLoc = gl.getAttribLocation(this.shaderLoc, 'a_Colr1');
-    
-    if(this.a_ColrLoc < 0) {
-        console.log(this.constructor.name + 
-                        '.init() failed to get the GPU location of attribute a_Colr1');
-        return -1;	// error exit.
-    }
+
       
       // c2) Find All Uniforms:-----------------------------------------------------
       //Get GPU storage location for each uniform var used in our shader programs: 
-    this.u_ModelMatLoc = gl.getUniformLocation(this.shaderLoc, 'u_ModelMat1');
-    if (!this.u_ModelMatLoc) { 
+    this.u_LookLoc = gl.getUniformLocation(this.shaderLoc, 'u_Look');
+    this.u_ModelMatLoc = gl.getUniformLocation(this.shaderLoc, 'u_ModelMat');
+    this.u_MvpMatLoc = gl.getUniformLocation(this.shaderLoc, 'u_MvpMat');
+    this.u_NormalMatLoc = gl.getUniformLocation(this.shaderLoc, 'u_NormalMat');
+    if (!this.u_LookLoc || !this.u_ModelMatLoc || !this.u_MvpMatLoc || !this.u_NormalMatLoc) { 
         console.log(this.constructor.name + 
-                        '.init() failed to get GPU location for u_ModelMat1 uniform');
+                        '.init() failed to get GPU location for matrix uniform');
         return -1;
     }  
 
-    this.u_MvpMatLoc = gl.getUniformLocation(this.shaderLoc, 'u_MvpMat1');
-    if (!this.u_MvpMatLoc) {
-        console.log(this.constructor.name +
-                        '.init() failed to get GPU location for u_MvpMat1 uniform');
-    }
 
-    this.u_NormalMatLoc = gl.getUniformLocation(this.shaderLoc, 'u_NormalMat1');
-    if (!this.u_NormalMatLoc) {
-        console.log(this.constructor.name +
-                        '.init() failed to get GPU location for u_NormalMat1 uniform');
+    this.lamp0.u_pos = gl.getUniformLocation(this.shaderLoc, 'u_LampSet[0].pos');
+    this.lamp0.u_ambi = gl.getUniformLocation(this.shaderLoc, 'u_LampSet[0].ambi');
+    this.lamp0.u_diff = gl.getUniformLocation(this.shaderLoc, 'u_LampSet[0].diff');
+    this.lamp0.u_spec = gl.getUniformLocation(this.shaderLoc, 'u_LampSet[0].spec');
+    if (!this.lamp0.u_pos || !this.lamp0.u_ambi || !this.lamp0.u_diff || !this.lamp0.u_spec) {
+        console.log(this.constructor.name + 
+                        '.init() failed to get GPU Lamp0 storage locations');
         return -1;
     }
+
+    this.matl0.uLoc_Ke = gl.getUniformLocation(this.shaderLoc, 'u_MatlSet[0].emit');
+    this.matl0.uLoc_Ka = gl.getUniformLocation(this.shaderLoc, 'u_MatlSet[0].ambi');
+    this.matl0.uLoc_Kd = gl.getUniformLocation(this.shaderLoc, 'u_MatlSet[0].diff');
+    this.matl0.uLoc_Ks = gl.getUniformLocation(this.shaderLoc, 'u_MatlSet[0].spec');
+    if (!this.matl0.uLoc_Ke || !this.matl0.uLoc_Ka || !this.matl0.uLoc_Kd || !this.matl0.uLoc_Ks) {
+        console.log(this.constructor.name +
+                        '.init() failed to get GPU Reflectance storage locations');
+        return -1;
+    }
+
+    this.lamp0.I_pos.elements.set( [6.0, 5.0, 5.0]);
+    this.lamp0.I_ambi.elements.set([0.4, 0.4, 0.4]);
+    this.lamp0.I_diff.elements.set([1.0, 1.0, 1.0]);
+    this.lamp0.I_spec.elements.set([1.0, 1.0, 1.0]);
+
 }
    
 
@@ -1365,19 +1372,29 @@ VBObox2.prototype.switchToMe = function() {
         false,
         this.vboStride,
         this.vboOffset_a_Pos1);
-
-    // Point to a_Colr
-    gl.vertexAttribPointer(
-        this.a_ColrLoc, 
-        this.vboFcount_a_Colr1, 
-        gl.FLOAT, 
-        false, 
-        this.vboStride, 
-        this.vboOffset_a_Colr1);
                                   
     // --Enable this assignment of each of these attributes to its' VBO source:
     gl.enableVertexAttribArray(this.a_PosLoc);
-    gl.enableVertexAttribArray(this.a_ColrLoc);
+
+
+        /// NEED TO REMOVE COLOR BECAUSE NO LONGER NEEDED FOR OBJECT
+        /// NEED TO DETERMINE IF I NEED TO PASS IN INDICE UNIFORM
+        /// 
+
+
+    // Update lighting unifroms
+    gl.uniform3fv(this.lamp0.u_pos, this.lamp0.I_pos.elements.slice(0,3));
+    gl.uniform3fv(this.lamp0.u_ambi, this.lamp0.I_ambi.elements);
+    gl.uniform3fv(this.lamp0.u_diff, this.lamp0.I_diff.elements);
+    gl.uniform3fv(this.lamp0.u_spec, this.lamp0.I_spec.elements);
+
+    // Update Material uniform
+    gl.uniform3fv(this.matl0.uLoc_Ke, this.matl0.K_emit.slice(0, 3));
+    gl.uniform3fv(this.matl0.uLoc_Ka, this.matl0.K_ambi.slice(0, 3));
+    gl.uniform3fv(this.matl0.uLoc_Kd, this.matl0.K_diff.slice(0, 3));
+    gl.uniform3fv(this.matl0.uLoc_Ks, this.matl0.K_spec.slice(0, 3));
+    gl.uniform1i(this.matl0.uLoc_Kshiny, parseInt(this.matl0.K_shiny, 10));
+
 }
 
 
@@ -1438,6 +1455,12 @@ VBObox2.prototype.adjust = function() {
 
 
 VBObox2.prototype.updateUniforms = function() {
+    // Update view uniform
+    gl.uniform3f(this.u_LookLoc, L_x-e_x, L_y-e_y, L_z-e_z);
+
+    
+
+
     this.ModelMat.setIdentity();
 
     this.MvpMat.multiply(this.ModelMat);

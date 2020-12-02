@@ -4,44 +4,6 @@ Name: Spencer Fitch
 Email: SpencerFitch2022@u.northwestern.edu
 */
 
-// Vertex shader program----------------------------------
-
-var VSHADER_SOURCE = 
-  'uniform mat4 u_ModelMatrix;\n' +
-  'attribute vec4 a_Position;\n' +
-  'attribute vec4 a_Color;\n' +
-  'varying vec4 v_Color;\n' +
-  'void main() {\n' +
-  '  gl_Position = u_ModelMatrix * a_Position;\n' +
-  '  gl_PointSize = 10.0;\n' +
-  '  v_Color = a_Color;\n' +
-  '}\n';
-/*
-var VSHADER_SOURCE = 
-  'uniform mat4 u_ModelMatrix;\n' +
-  'uniform mat4 u_NormalMatrix;\n' +
-  'attribute vec4 a_Position;\n' +
-  'attribute vec3 a_Color;\n' +
-  'attribute vec4 a_Normal;\n'
-  'varying vec4 v_Color;\n' +
-  'void main() {\n' +
-  '  vec4 transVEc = u_NormalMatrix + vec4(a_Normal, 0.0);\n' +
-  '  vec3 normVec = normalize(transVec.xyz);\n' +
-  '  vec3 lightVec = vec3(0.0, -1.0, 0.0);\n' +
-  '  gl_Position = u_ModelMatrix * a_Position;\n' +
-  '  v_Color = a_Color;\n' +
-  '}\n';
-*/
-
-// Fragment shader program----------------------------------
-var FSHADER_SOURCE = 
-//  '#ifdef GL_ES\n' +
-  'precision mediump float;\n' +
-//  '#endif GL_ES\n' +
-  'varying vec4 v_Color;\n' +
-  'void main() {\n' +
-  '  gl_FragColor = v_Color;\n' +
-  '}\n';
 
 // Global Variables
 //------------For WebGL-----------------------------------------------
@@ -52,9 +14,6 @@ var g_canvas = document.getElementById('webgl');
 // ----------For tetrahedron & its matrix---------------------------------
 var g_vertsMax = 0;                 // number of vertices held in the VBO 
 var floatsPerVertex = 7;
-var mvpMatrix = new Matrix4();  // Construct 4x4 matrix; contents get sent
-                                    //		 to the GPU/Shaders as a 'uniform' var.
-var g_modelMatLoc;                  // that uniform's location in the GPU
 
 //------------For Animation---------------------------------------------
 var g_isRun = true;                 // run/stop for animation; used in tick().
@@ -108,7 +67,7 @@ var pauseAnimations = false;
 
 // -----------For 3D camera controls ----------------------------------
 var e_x = 0		// \
-var e_y = -6		//  -> Camera eye locations
+var e_y = -6	//  -> Camera eye locations
 var e_z = 1		// /
 
 var theta_H = 90*Math.PI/180;	// Horizontal pitch (in radians for JS trig functions)
@@ -133,6 +92,9 @@ var gouraudBox = new VBObox1();
 
 var VBO0Active = true;
 var VBO1Active = true;
+var VBO2Active = false;
+
+var lightingMode = 1.0;
 
 function main() {
 //==============================================================================
@@ -230,12 +192,14 @@ function drawAll() {
 		gouraudBox.switchToMe();
 		gouraudBox.adjust();
 		gouraudBox.draw();
-		/*
+	}
+	/*
+	if (VBO2Active) {
 		phongBox.switchToMe();
 		phongBox.adjust();
 		phongBox.draw();
-		*/
 	}
+	*/
 }
 
 function setCamera() {
@@ -1920,6 +1884,21 @@ function toggleVBO(vboNumber) {
 		case 1:
 			VBO1Active = !VBO1Active;
 			break;
+		case 2:
+			VBO2Active = !VBO2Active;
+			break;
+	}
+}
+
+function toggleLighting() {
+	const lightingOutput = document.getElementById('lightingMode')
+	if (lightingMode == 1.0) {
+		lightingMode = 0.0;
+		lightingOutput.innerHTML = 'Current: Blinn-Phong Lighting'
+
+	} else {
+		lightingMode = 1.0;
+		lightingOutput.innerHTML = 'Current: Phong Lighting'
 	}
 }
 
