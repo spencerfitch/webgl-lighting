@@ -29,8 +29,10 @@ function VBObox0() {
     // -------- INIT VERTEX BUFFER ---------- //
     makeGroundGrid();
     makeAxisMarker();
+    makePauseIcon();
     
-    var mySiz = (gndVerts.length + axisVerts.length);
+    var mySiz = (gndVerts.length + axisVerts.length + pausVerts.length);
+
     this.vboVerts = mySiz / floatsPerVertex;
 
     var vboVertices = new Float32Array(mySiz)
@@ -42,6 +44,10 @@ function VBObox0() {
     axisMarkerStart = i;
     for(j=0; j<axisVerts.length; i++, j++) {
         vboVertices[i] = axisVerts[j]
+    }
+    pauseIconStart = i;
+    for(j=0; j<pausVerts.length; i++, j++) {
+        vboVertices[i] = pausVerts[j]
     }
 
     this.vboContents = vboVertices;
@@ -272,6 +278,30 @@ VBObox0.prototype.draw = function() {
         console.log('ERROR! before' + this.constructor.name + 
                         '.draw() call you needed to call this.switchToMe()!!');
     }  
+    if (pauseAnimations) {
+        // Draw pause icon onto camera
+        pushMatrix(this.ModelMat);
+
+        var vpAspect = g_canvas.width / g_canvas.height;
+        this.ModelMat.setTranslate(-0.9, -0.8, 0.0);
+        this.ModelMat.scale(0.1/vpAspect, 0.1, 0.1);
+        gl.uniformMatrix4fv(this.u_ModelMatLoc,
+                            false,
+                            this.ModelMat.elements);
+        drawPauseIcon();
+
+        this.ModelMat.translate(0.5, 0, 0);
+        gl.uniformMatrix4fv(this.u_ModelMatLoc,
+            false,
+            this.ModelMat.elements);
+        drawPauseIcon();
+
+        this.ModelMat = popMatrix();
+        gl.uniformMatrix4fv(this.u_ModelMatLoc,
+                            false,
+                            this.ModelMat.elements);
+    }
+
     drawAxisMarker();
     this.ModelMat.scale(0.1, 0.1, 0.1);
     gl.uniformMatrix4fv(this.u_ModelMatLoc,
@@ -380,7 +410,23 @@ function drawAxisMarker() {
 //// ------------------------------------------------------------------ ////
     
 
-
+//// ---------- Pause Icon Functions ---------------------------------- ////
+function makePauseIcon() {
+    pausVerts = new Float32Array([
+        0.00, 0.00, 0.00, 1.0,		1.0, 1.0, 1.0, // Node 0	(White)
+	    0.20, 0.00, 0.00, 1.0,		1.0, 1.0, 1.0, // Node 1 	(White)
+	    0.00, 1.00, 0.00, 1.0,		1.0, 1.0, 1.0, // Node 3	(White) 
+	    0.20, 1.00, 0.00, 1.0,		1.0, 1.0, 1.0, // Node 2 	(White)
+	    0.20, 0.00, 0.00, 1.0,		1.0, 1.0, 1.0, // Node 1 	(White)
+        0.00, 1.00, 0.00, 1.0,		1.0, 1.0, 1.0, // Node 3	(White)	
+    ]);
+}
+function drawPauseIcon() {
+    gl.drawArrays(gl.TRIANGLES,
+                  pauseIconStart/floatsPerVertex,
+                  pausVerts.length/floatsPerVertex);
+}
+//// ------------------------------------------------------------------ ////
 
 
 
@@ -396,9 +442,9 @@ function VBObox1() {
         'uniform mat4 u_ModelMat1;\n' +
         'uniform mat4 u_NormalMat1;\n' +
         //
-        'uniform vec3 u_LightColor;\n' +
-        'uniform vec3 u_LightPosition;\n' +
-        'uniform vec3 u_AmbientLight;\n' + 
+        //'uniform vec3 u_LightColor;\n' +
+        //'uniform vec3 u_LightPosition;\n' +
+        //'uniform vec3 u_AmbientLight;\n' + 
         'uniform vec3 u_Look1;\n' +
         //
         'uniform float u_LightCode;\n' +

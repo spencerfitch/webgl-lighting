@@ -102,7 +102,7 @@ var X_keyActive = false;
 var C_keyActive = false;
 
 // Global to know if pause is activated
-var Plane_paused = false;
+var pauseAnimations = false;
 
 
 
@@ -1718,28 +1718,6 @@ function drawFoldingCube() {
 //// ------------------------------------------------------------------ ////
 
 
-//// ------------ EXTRA Part - Pause Icon ----------------------------- ////
-function drawSinglePause() {
-	gl.drawArrays(gl.TRIANGLES, 623, 6);
-}
-
-function drawPauseIcon() {
-	pushMatrix(mvpMatrix);
-
-	// Draw left half of pause
-	drawSinglePause();
-	// Draw right half of pause
-	mvpMatrix.translate(0.5, 0.0, 0.0);
-	gl.uniformMatrix4fv(g_modelMatLoc, false, mvpMatrix.elements);
-	drawSinglePause();
-
-	// Restore original matrix
-	mvpMatrix = popMatrix();
-	gl.uniformMatrix4fv(g_modelMatLoc, false, mvpMatrix.elements);
-}
-//// ------------------------------------------------------------------ ////
-
-
 //// ---------- Draw NU Logo ------------------------------------------ ////
 function drawNULogo() {
 	gl.drawArrays(gl.TRIANGLES,
@@ -1852,7 +1830,7 @@ function drawScene() {
 
 
 	// --------- Draw Pause Icon if necessary ------ //
-	if (Plane_paused) {
+	if (pauseAnimations) {
 		mvpMatrix.setTranslate(-0.9, -0.8, 0.0);		// Shift to lower left corner
 		mvpMatrix.scale(0.5, 1, -1);					// Flip to left hand coordinates and downscale x b/c of canvas aspect ratio
 		mvpMatrix.scale(0.1, 0.1, 0.1);					// Scale down pause icon
@@ -1889,7 +1867,7 @@ function animate() {
 
 	
   	// If currently paused, do not update automatic animations
-  	if (Plane_paused) {
+  	if (pauseAnimations) {
 		return;
 	}
 
@@ -1961,8 +1939,8 @@ function myKeyDown(kev) {
  
 	switch(kev.code) {
 		case "KeyP":
-			Plane_paused = !Plane_paused;
-			console.log("Plane_paused= " + Plane_paused);
+			pauseAnimations = !pauseAnimations;
+			console.log("pauseAnimations= " + pauseAnimations);
 			break;
 
 		//-------------- WASD navigation -----------------
