@@ -92,7 +92,6 @@ var phongBox = new VBObox2();
 
 var VBO0Active = true;
 var VBO1Active = true;
-var VBO2Active = false;
 
 var lightingMode = 1.0;
 
@@ -189,13 +188,12 @@ function drawAll() {
 	}
 
 	if (VBO1Active) {
-		// Draw gourad scene
+		// Draw Gouraud shading scene
 		gouraudBox.switchToMe();
 		gouraudBox.adjust();
 		gouraudBox.draw();
-	}
-	
-	if (VBO2Active) {
+	} else {
+		// Draw Phong shading scene
 		phongBox.switchToMe();
 		phongBox.adjust();
 		phongBox.draw();
@@ -1881,25 +1879,23 @@ function toggleVBO(vboNumber) {
 	switch(vboNumber) {
 		case 0:
 			VBO0Active = !VBO0Active;
+			document.getElementById('VBO0Active').innerHTML = (VBO0Active) ? 'Hide Ground Grid' : 'Show Ground Grid';
 			break;
 		case 1:
 			VBO1Active = !VBO1Active;
-			break;
-		case 2:
-			VBO2Active = !VBO2Active;
+			document.getElementById('VBO1Active').innerHTML = (VBO1Active) ? 'Switch to Phong Shading' : 'Switch to Gouraud Shading';
 			break;
 	}
 }
 
 function toggleLighting() {
-	const lightingOutput = document.getElementById('lightingMode')
 	if (lightingMode == 1.0) {
 		lightingMode = 0.0;
-		lightingOutput.innerHTML = 'Current: Blinn-Phong Lighting'
+		document.getElementById('SwapLighting').innerHTML = 'Switch to Blinn-Phong Lighting';
 
 	} else {
 		lightingMode = 1.0;
-		lightingOutput.innerHTML = 'Current: Phong Lighting'
+		document.getElementById('SwapLighting').innerHTML = 'Switch to Phong Lighting';
 	}
 }
 
