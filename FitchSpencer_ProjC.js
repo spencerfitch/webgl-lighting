@@ -88,7 +88,7 @@ g_worldMat = new Matrix4();
 
 var worldBox = new VBObox0();	// Holds ground-plane grid and axis marker
 var gouraudBox = new VBObox1();
-//var phongBox = new VBObox2();
+var phongBox = new VBObox2();
 
 var VBO0Active = true;
 var VBO1Active = true;
@@ -118,6 +118,7 @@ function main() {
 	// Init VBO 
 	worldBox.init(gl);
 	gouraudBox.init(gl);
+	phongBox.init(gl);
 
 	// Set perspective camera
 	setCamera();
@@ -193,13 +194,13 @@ function drawAll() {
 		gouraudBox.adjust();
 		gouraudBox.draw();
 	}
-	/*
+	
 	if (VBO2Active) {
 		phongBox.switchToMe();
 		phongBox.adjust();
 		phongBox.draw();
 	}
-	*/
+	
 }
 
 function setCamera() {

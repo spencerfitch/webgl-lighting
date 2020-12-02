@@ -510,6 +510,7 @@ function VBObox1() {
     }
 
     this.vboContents = vboVertices;
+    // -------------------------------------- //
 
     /*
     makeHollowCylinder();
@@ -779,6 +780,8 @@ VBObox1.prototype.adjust = function() {
 
 VBObox1.prototype.updateUniforms = function() {
     
+    this.MvpMat.multiply(this.ModelMat);
+
     this.NormalMat.setInverseOf(this.ModelMat);
     this.NormalMat.transpose();
 
@@ -812,7 +815,6 @@ VBObox1.prototype.draw = function() {
     this.ModelMat.translate(1, 1, 0.5);
     this.ModelMat.scale(0.5, 0.5, 0.5);
     this.ModelMat.rotate(g_angle_gyro, 0, 0, 1);
-    this.MvpMat.multiply(this.ModelMat);
     this.updateUniforms();
     drawSphere();
 
@@ -823,7 +825,6 @@ VBObox1.prototype.draw = function() {
     this.ModelMat.translate(-1, 0, 0.5);
     this.ModelMat.scale(0.5, 0.5, 0.5);
     this.ModelMat.rotate(g_angle_gyro, 0, 0, 1);
-    this.MvpMat.multiply(this.ModelMat);
     this.updateUniforms();
     drawSphere();
 
@@ -1147,8 +1148,8 @@ function VBObox2() {
         //
         'void main() {\n' +
         '  gl_Position = u_MvpMat * a_Position;\n' +
-        '  v_Pos1 = u_ModelMat * a_Position;\n' +
-        '  v_Norm1 = normalize(vec3(u_NormalMat1 * a_Normal));\n' +
+        '  v_Position = u_ModelMat * a_Position;\n' +
+        '  v_Normal = normalize(vec3(u_NormalMat * a_Normal));\n' +
         '  v_Kd = u_MatlSet[0].diff;\n' +
         ' }\n';
     
@@ -1182,7 +1183,7 @@ function VBObox2() {
         'varying vec3 v_Kd;\n' +
         //
         'void main() {\n' +
-        '   vec3 normal = normalize(v_Norm1);\n' +
+        '   vec3 normal = normalize(v_Normal);\n' +
         '   vec3 lightDirection = normalize(u_LampSet[0].pos - v_Position.xyz);\n' +
         '   vec3 V = normalize(-u_Look);\n'+
         '   float nDotL = max(dot(lightDirection, normal), 0.0);\n' +
@@ -1191,6 +1192,7 @@ function VBObox2() {
         '   float e64 = pow(nDotH, float(u_MatlSet[0].shiny));\n' +
         '   vec3 emissive = u_MatlSet[0].emit;\n' +
         '   vec3 ambient = u_LampSet[0].ambi * u_MatlSet[0].ambi;\n' +
+        '   vec3 diffuse = u_LampSet[0].diff * v_Kd * nDotL;\n' +
         '   vec3 speculr = u_LampSet[0].spec * u_MatlSet[0].spec * e64;\n' +
         '   gl_FragColor = vec4(emissive + ambient + diffuse + speculr, 1.0);\n' +
         '}\n';
@@ -1198,20 +1200,15 @@ function VBObox2() {
 
 
     // -------- INIT VERTEX BUFFER ---------- //
-    makeHollowCylinder();
     makeSphere();
-    
-    var mySiz = (cylVerts.length + sphVerts.length)
-    this.vboVerts = mySiz / floatsPerVertex;
 
-    var vboVertices = new Float32Array(mySiz)
+    var mySiz = sphVerts.length
+    this.vboVerts = mySiz / floatsPerVertexNorm;
 
-    cylStart = 0;
-    for(i=0,j=0; j<cylVerts.length; i++, j++) {
-        vboVertices[i] = cylVerts[j];
-    }
-    sphStart = i;
-    for(j=0; j<sphVerts.length; i++, j++) {
+    var vboVertices = new Float32Array(mySiz);
+
+    sphStart = 0;
+    for(i=0, j=0; j<sphVerts.length; i++, j++) {
         vboVertices[i] = sphVerts[j];
     }
 
@@ -1238,8 +1235,10 @@ function VBObox2() {
     this.vboFcount_a_Pos1 =  4;    // # of floats in the VBO needed to store the
                                     // attribute named a_Pos0. (4: x,y,z,w values)
     this.vboFcount_a_Colr1 = 3;   // # of floats for this attrib (r,g,b values) 
+    this.vboFcount_a_Norm1 = 3;
     console.assert((this.vboFcount_a_Pos1 +     // check the size of each and
-                    this.vboFcount_a_Colr1) *   // every attribute in our VBO
+                    this.vboFcount_a_Colr1 +
+                    this.vboFcount_a_Norm1) *   // every attribute in our VBO
                     this.FSIZE == this.vboStride, // for agreeement with'stride'
                     "Uh oh! VBObox1.vboStride disagrees with attribute-size values!");
     
@@ -1250,6 +1249,7 @@ function VBObox2() {
                                     // (4 floats * bytes/float) 
                                     // # of bytes from START of vbo to the START
                                     // of 1st a_Colr0 attrib value in vboContents[]
+    this.vboOffset_a_Norm1 = this.vboOffset_a_Colr1 + (this.vboFcount_a_Colr1*this.FSIZE);
 
     // GPU memory locations:
     this.vboLoc;		// GPU Location for Vertex Buffer Object, 
@@ -1259,7 +1259,8 @@ function VBObox2() {
 
     // Attribute locations in our shaders:
     this.a_PosLoc;		// GPU location for 'a_Pos0' attribute
-    this.a_ColrLoc;		// GPU location for 'a_Colr0' attribute
+    //this.a_ColrLoc;		// GPU location for 'a_Colr0' attribute
+    this.a_NormLoc;
     
     // Uniform locations &values in our shaders
     this.ModelMat = new Matrix4();	// Transforms CVV axes to model axes.
@@ -1306,14 +1307,21 @@ VBObox2.prototype.init = function() {
                     gl.STATIC_DRAW);	
     
       // c1) Find All Attributes:---------------------------------------------------
-    this.a_PosLoc = gl.getAttribLocation(this.shaderLoc, 'a_Pos');
+    this.a_PosLoc = gl.getAttribLocation(this.shaderLoc, 'a_Position');
     if(this.a_PosLoc < 0) {
         console.log(this.constructor.name + 
-                        '.init() Failed to get GPU location of attribute a_Pos1');
+                        '.init() Failed to get GPU location of attribute a_Position');
         return -1;	// error exit.
     }
 
-    
+    this.a_NormLoc = gl.getAttribLocation(this.shaderLoc, 'a_Normal');
+    if(this.a_NormLoc < 0) {
+        console.log(this.constructor.name + 
+                        '.init() Failed to get GPU location of attribute a_Normal');
+        return -1;	// error exit.
+    }
+
+    // this.a_ColrLoc
 
       
       // c2) Find All Uniforms:-----------------------------------------------------
@@ -1343,7 +1351,8 @@ VBObox2.prototype.init = function() {
     this.matl0.uLoc_Ka = gl.getUniformLocation(this.shaderLoc, 'u_MatlSet[0].ambi');
     this.matl0.uLoc_Kd = gl.getUniformLocation(this.shaderLoc, 'u_MatlSet[0].diff');
     this.matl0.uLoc_Ks = gl.getUniformLocation(this.shaderLoc, 'u_MatlSet[0].spec');
-    if (!this.matl0.uLoc_Ke || !this.matl0.uLoc_Ka || !this.matl0.uLoc_Kd || !this.matl0.uLoc_Ks) {
+    this.matl0.uLoc_Kshiny = gl.getUniformLocation(this.shaderLoc, 'u_MatlSet[0].shiny');
+    if (!this.matl0.uLoc_Ke || !this.matl0.uLoc_Ka || !this.matl0.uLoc_Kd || !this.matl0.uLoc_Ks || !this.matl0.uLoc_Kshiny) {
         console.log(this.constructor.name +
                         '.init() failed to get GPU Reflectance storage locations');
         return -1;
@@ -1372,28 +1381,26 @@ VBObox2.prototype.switchToMe = function() {
         false,
         this.vboStride,
         this.vboOffset_a_Pos1);
+
+    gl.vertexAttribPointer(
+        this.a_NormLoc,
+        this.vboFcount_a_Norm1,
+        gl.FLOAT,
+        false,
+        this.vboStride,
+        this.vboOffset_a_Norm1);
+
+    // a_Colr pointer removed
                                   
     // --Enable this assignment of each of these attributes to its' VBO source:
     gl.enableVertexAttribArray(this.a_PosLoc);
+    gl.enableVertexAttribArray(this.a_NormLoc);
 
+        /// TODO
+        ///  - REMOVE COLOR BECAUSE NO LONGER NEEDED FOR OBJECT
+        ///  - DETERMINE IF I NEED TO PASS IN INDICE UNIFORM
+        ///  - Pass in right size for a_Normal and assign proper vertex buffer
 
-        /// NEED TO REMOVE COLOR BECAUSE NO LONGER NEEDED FOR OBJECT
-        /// NEED TO DETERMINE IF I NEED TO PASS IN INDICE UNIFORM
-        /// 
-
-
-    // Update lighting unifroms
-    gl.uniform3fv(this.lamp0.u_pos, this.lamp0.I_pos.elements.slice(0,3));
-    gl.uniform3fv(this.lamp0.u_ambi, this.lamp0.I_ambi.elements);
-    gl.uniform3fv(this.lamp0.u_diff, this.lamp0.I_diff.elements);
-    gl.uniform3fv(this.lamp0.u_spec, this.lamp0.I_spec.elements);
-
-    // Update Material uniform
-    gl.uniform3fv(this.matl0.uLoc_Ke, this.matl0.K_emit.slice(0, 3));
-    gl.uniform3fv(this.matl0.uLoc_Ka, this.matl0.K_ambi.slice(0, 3));
-    gl.uniform3fv(this.matl0.uLoc_Kd, this.matl0.K_diff.slice(0, 3));
-    gl.uniform3fv(this.matl0.uLoc_Ks, this.matl0.K_spec.slice(0, 3));
-    gl.uniform1i(this.matl0.uLoc_Kshiny, parseInt(this.matl0.K_shiny, 10));
 
 }
 
@@ -1435,6 +1442,7 @@ VBObox2.prototype.adjust = function() {
     
 
     this.MvpMat.set(g_worldMat);
+    this.ModelMat.setIdentity();
     this.updateUniforms();
 
     /*
@@ -1458,10 +1466,19 @@ VBObox2.prototype.updateUniforms = function() {
     // Update view uniform
     gl.uniform3f(this.u_LookLoc, L_x-e_x, L_y-e_y, L_z-e_z);
 
-    
+    // Update lighting unifroms
+    gl.uniform3fv(this.lamp0.u_pos, this.lamp0.I_pos.elements.slice(0,3));
+    gl.uniform3fv(this.lamp0.u_ambi, this.lamp0.I_ambi.elements);
+    gl.uniform3fv(this.lamp0.u_diff, this.lamp0.I_diff.elements);
+    gl.uniform3fv(this.lamp0.u_spec, this.lamp0.I_spec.elements);
 
+    // Update Material uniform
+    gl.uniform3fv(this.matl0.uLoc_Ke, this.matl0.K_emit.slice(0, 3));
+    gl.uniform3fv(this.matl0.uLoc_Ka, this.matl0.K_ambi.slice(0, 3));
+    gl.uniform3fv(this.matl0.uLoc_Kd, this.matl0.K_diff.slice(0, 3));
+    gl.uniform3fv(this.matl0.uLoc_Ks, this.matl0.K_spec.slice(0, 3));
+    gl.uniform1i(this.matl0.uLoc_Kshiny, parseInt(this.matl0.K_shiny, 10));
 
-    this.ModelMat.setIdentity();
 
     this.MvpMat.multiply(this.ModelMat);
     
@@ -1488,10 +1505,32 @@ VBObox2.prototype.draw = function() {
     //pushMatrix(this.MvpMat);
 
     // Draw sphere
-    this.MvpMat.translate(1, 1, 0);
-    this.MvpMat.scale(0.5, 0.5, 0.5);
+    this.ModelMat.translate(1, 1, 0);
+    this.ModelMat.scale(0.5, 0.5, 0.5);
     this.updateUniforms();
     drawSphere();
+
+    /*
+    pushMatrix(this.MvpMat);
+    pushMatrix(this.ModelMat);
+
+    // Draw sphere
+    this.ModelMat.translate(1, 1, 0.5);
+    this.ModelMat.scale(0.5, 0.5, 0.5);
+    this.ModelMat.rotate(g_angle_gyro, 0, 0, 1);
+    this.updateUniforms();
+    drawSphere();
+
+    this.ModelMat = popMatrix();
+    this.MvpMat = popMatrix();
+
+    // Draw second sphere
+    this.ModelMat.translate(-1, 0, 0.5);
+    this.ModelMat.scale(0.5, 0.5, 0.5);
+    this.ModelMat.rotate(g_angle_gyro, 0, 0, 1);
+    this.updateUniforms();
+    drawSphere();
+    */
 
     /*
     this.MvpMat = popMatrix();
