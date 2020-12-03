@@ -524,10 +524,12 @@ function VBObox1() {
         'uniform mat4 u_ModelMat1;\n' +
         'uniform mat4 u_NormalMat1;\n' +
         //
-        //'uniform vec3 u_LightColor;\n' +
         'uniform vec3 u_LightPos;\n' +
-        //'uniform vec3 u_AmbientLight;\n' + 
         'uniform vec3 u_Look1;\n' +
+        //
+        //'uniform vec3 u_LightColrDiff;\n' +
+        //'uniform vec3 u_LightColrAmbi;\n' +
+        //'uniform vec3 u_LightColrSpec;\n'
         //
         'uniform float u_LightCode;\n' +
         //
@@ -706,6 +708,11 @@ VBObox1.prototype.init = function() {
  
     this.u_LightCodeLoc = gl.getUniformLocation(this.shaderLoc, 'u_LightCode');
     this.u_LightPosLoc = gl.getUniformLocation(this.shaderLoc, 'u_LightPos');
+
+    //this.u_LightColrLoc_ambi = gl.getUniformLocation(this.shaderLoc, 'u_LightColrAmbi');
+    //this.u_LightColrLoc_diff = gl.getUniformLocation(this.shaderLoc, 'u_LightColrDiff');
+    //this.u_LightColrLoc_spec = gl.getUniformLocation(this.shaderLoc, 'u_LightColrSpec');
+    
     if(!this.u_MvpMatLoc || !this.u_ModelMatLoc || !this.u_NormalMatLoc || !this.u_LookLoc || !this.u_LightPosLoc || !this.u_LightCodeLoc) {
         console.log(this.constructor.name + 
                         '.init() failed to get the GPU location of uniform');

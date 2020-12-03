@@ -157,22 +157,19 @@ function tick() {
 	document.getElementById('LPXlabel').innerHTML = Number(lightPosX).toFixed(1);
 	document.getElementById('LPYlabel').innerHTML = Number(lightPosY).toFixed(1);
 	document.getElementById('LPZlabel').innerHTML = Number(lightPosZ).toFixed(1);
-	
-	// Display current speed next to slidebar
-	document.getElementById('aileronMaxDisplay').innerHTML = g_angle_gyroRate
 
 
     animate();		// Update the rotation angle
 	drawAll();		// Draw all parts
 	
 
-	// Display information about plane
-	document.getElementById('CurRotationSpeed').innerHTML=
-		'Current Camera Eye Position= &emsp;&emsp;(' + e_x.toFixed(1) + ', ' + e_y.toFixed(1) + ', ' + e_z.toFixed(1) + ')';
-	document.getElementById('CurRollAngleDisplay').innerHTML= 
-		'Horizontal Rotation Angle (deg)= &emsp;'+(theta_H*180.0/Math.PI).toFixed(1);
-	document.getElementById('CurWingAngleDisplay').innerHTML=
-		'Vertial Pitch Angle (deg)= &emsp;&emsp;&emsp;&emsp;'+(theta_V*180.0/Math.PI).toFixed(1);
+	// Display information about camera location
+	document.getElementById('cameraEyePos').innerHTML=
+		'Camera Position : &emsp;&emsp;(' + e_x.toFixed(1) + ', ' + e_y.toFixed(1) + ', ' + e_z.toFixed(1) + ')';
+	document.getElementById('cameraRotHz').innerHTML= 
+		'Horizontal Rotation : &emsp;'+(theta_H*180.0/Math.PI).toFixed(1);
+	document.getElementById('cameraRotVt').innerHTML=
+		'Vertial Pitch : &emsp;&emsp;&emsp;&emsp;'+(theta_V*180.0/Math.PI).toFixed(1);
 
 
 
@@ -1877,26 +1874,6 @@ function animate() {
 
 //==================HTML Button Callbacks======================
 
-function angleSubmit() {
-// Process angle from HTML text input
-
-	// Read HTML edit-box contents:
-	var UsrTxt = document.getElementById('usrAngle').value;	
-	var usrNumber = parseFloat(UsrTxt); // convert string to float number 
-	if ((usrNumber < 180) && (usrNumber > -180)) {
-		// User entered valid value
-		g_angle01 = usrNumber;
-		document.getElementById('usrAngle').style = "";
-		document.getElementById('EditBoxOut').innerHTML ='You Typed: '+UsrTxt;
-	} else {
-		// User entered invalid value
-		document.getElementById('usrAngle').style = "background-color: pink;";
-		document.getElementById('EditBoxOut').innerHTML ='You Typed: '+UsrTxt+'  - which is not a valid entry. Please enter a valid numb between -180 and 180.';
-	}
-
-  	console.log('angleSubmit: UsrTxt:', UsrTxt); // print in console, and
-};
-
 // Switch activated VBO objects
 function toggleVBO(vboNumber) {
 	switch(vboNumber) {
@@ -1914,11 +1891,11 @@ function toggleVBO(vboNumber) {
 function toggleLighting() {
 	if (lightingMode == 1.0) {
 		lightingMode = 0.0;
-		document.getElementById('SwapLighting').innerHTML = 'Switch to Blinn-Phong Lighting';
+		document.getElementById('SwapLighting').innerHTML = 'Switch to Phong Lighting';
 
 	} else {
 		lightingMode = 1.0;
-		document.getElementById('SwapLighting').innerHTML = 'Switch to Phong Lighting';
+		document.getElementById('SwapLighting').innerHTML = 'Switch to Blinn-Phong Lighting';
 	}
 }
 

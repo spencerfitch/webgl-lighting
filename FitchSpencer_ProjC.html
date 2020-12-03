@@ -20,31 +20,36 @@ Email: SpencerFitch2022@u.northwestern.edu
 	<div style="display: flex; height: 30vh; overflow:auto;">
 
 		<div id="datacontainer" style="background-color: blue;">
-			<button id=VBO0Active onclick='toggleVBO(0)' style="width: 250px;">Hide Ground Grid</button></br>
-			<button id=VBO1Active onclick='toggleVBO(1)' style="width: 250px;">Switch to Phong Shading</button></br>
-			<button id=SwapLighting onclick='toggleLighting()' style="width: 250px;">Switch to Blinn-Phong Lighting</button></br>
-			<div id= CurRotationSpeed></div>
-			<div id= CurRollAngleDisplay></div> 
-			<div id= CurWingAngleDisplay></div>
-			</br>
-
-			Rotation speed of rings:
-			<input id='aileronSlider' type='range' min='0' max='180' value="90" class="slider">
-			<b id='aileronMaxDisplay'></b>
-
+			<div style="margin: 10px; width: 100%;">
+				<button id=VBO0Active onclick='toggleVBO(0)' style="width: 250px;">Hide Ground Grid</button></br>
+				<button id=VBO1Active onclick='toggleVBO(1)' style="width: 250px;">Switch to Phong Shading</button></br>
+				<button id=SwapLighting onclick='toggleLighting()' style="width: 250px;">Switch to Blinn-Phong Lighting</button>
+			</div>
+			<div id= cameraEyePos style="margin-top: 10px;"></div>
+			<div id= cameraRotHz></div> 
+			<div id= cameraRotVt></div>
 		</div>
-		<div id="lightControls" style="background-color: red; margin-left: 30px; width: 200px;">
-			<div style="width:100%; background-color: green; text-align: center; margin-bottom: 10px; " > Light Controls</div>
-			<div style="width:100%; padding-left: 5px;">Location</div>
+		<div id="lightControls" style="background-color: gray; margin-left: 30px; width: 200px; overflow: hidden; border-radius: 5%;">
+			<div style="width:100%; background-color: green; text-align: center; padding: 5px;" > Light Controls</div>
+			<div style="width:100%; padding-left: 5px; margin-top: 10px;">Location</div>
 			<a>X: </a>
-				<input id='lightPosX' type='range' min='-5' max='5' value='0.0' class="slider" step="0.1">
+				<input id='lightPosX' type='range' min='-5' max='5' value='0.0' class="slider" step="0.1" onkeydown="event.preventDefault()">
 				<a id="LPXlabel" style="width: 10cm;">-5.0</a> </br>
 			<a>Y: </a>
-				<input id='lightPosY' type='range' min='-5' max='5' value='0.0' class="slider" step="0.1"> 
+				<input id='lightPosY' type='range' min='-5' max='5' value='0.0' class="slider" step="0.1" onkeydown="event.preventDefault()"> 
 				<a id="LPYlabel">-5.0</a> </br>
 			<a>Z: </a>
-				<input id='lightPosZ' type='range' min='-5' max='5' value='1.0' class="slider" step="0.1">
+				<input id='lightPosZ' type='range' min='-5' max='5' value='1.0' class="slider" step="0.1" onkeydown="event.preventDefault()">
 				<a id="LPZlabel">-5.0</a> </br>
+			<div style="padding-left: 5px; margin-top: 10px;">Light Colors</div>
+			<a style="padding-right: 5px; text-align: end; width: 80px; display: inline-block;">Ambient</a>
+				<input id='lightColrAmbi' type='color' value="#ffffff"> </br>
+			<a style="padding-right: 5px; text-align: end; width: 80px; display: inline-block;">Diffuse</a>
+				<input id='lightColrDiff' type='color'> </br>
+			<a style="padding-right: 5px; text-align: end; width: 80px; display: inline-block;">Specular</a>
+				<input id='lightColrSpec' type='color'> </br>
+			<a style="padding-right: 5px; text-align: end; width: 80px; display: inline-block;">Emissive</a>
+				<input id='lightColrEmit' type='color'> </br>
 		</div>
 		<img src="images/ProjectBInstructions.png" style="height: 100%; padding-left: 20ch;">
 	</div>
