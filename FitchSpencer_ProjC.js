@@ -96,6 +96,10 @@ var VBO1Active = true;
 
 var lightingMode = 1.0;
 
+var lightPosX = 0.0;
+var lightPosY = 0.0;
+var lightPosZ = 1.0;
+
 function main() {
 //==============================================================================
 
@@ -146,7 +150,13 @@ function resizeCanvas() {
 function tick() {
 
 	// Update rotating ring speed from slider
-	g_angle_gyroRate = document.getElementById('aileronSlider').value
+	lightPosX = document.getElementById('lightPosX').value;
+	lightPosY = document.getElementById('lightPosY').value;
+	lightPosZ = document.getElementById('lightPosZ').value;
+
+	document.getElementById('LPXlabel').innerHTML = Number(lightPosX).toFixed(1);
+	document.getElementById('LPYlabel').innerHTML = Number(lightPosY).toFixed(1);
+	document.getElementById('LPZlabel').innerHTML = Number(lightPosZ).toFixed(1);
 	
 	// Display current speed next to slidebar
 	document.getElementById('aileronMaxDisplay').innerHTML = g_angle_gyroRate
@@ -164,9 +174,6 @@ function tick() {
 	document.getElementById('CurWingAngleDisplay').innerHTML=
 		'Vertial Pitch Angle (deg)= &emsp;&emsp;&emsp;&emsp;'+(theta_V*180.0/Math.PI).toFixed(1);
 
-	// Display information about box
-	document.getElementById('CurBoxAngleDisplay').innerHTML=
-		'Angle between faces of the box= '+(g_angle_box+90).toFixed(1);
 
 
 	//--------------------------------

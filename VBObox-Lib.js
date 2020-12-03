@@ -443,7 +443,7 @@ function VBObox1() {
         'uniform mat4 u_NormalMat1;\n' +
         //
         //'uniform vec3 u_LightColor;\n' +
-        //'uniform vec3 u_LightPosition;\n' +
+        'uniform vec3 u_LightPos;\n' +
         //'uniform vec3 u_AmbientLight;\n' + 
         'uniform vec3 u_Look1;\n' +
         //
@@ -461,7 +461,7 @@ function VBObox1() {
         '   vec4 transVec = u_NormalMat1 * vec4(a_Norm1, 0.0);\n' +
         '   vec3 normVec = normalize(transVec.xyz);\n' +
         '   vec4 vertexPosition = u_ModelMat1 * a_Pos1;\n' +
-        '   vec3 lightVec = normalize(vec3(0.0, 0.0, 1.0) - vec3(vertexPosition));\n' +
+        '   vec3 lightVec = normalize(u_LightPos - vec3(vertexPosition));\n' +
         //
         '   float nDotL = max(dot(lightVec, normVec), 0.0);\n' +
         '   vec3 diffuse = vec3(0.8, 0.8, 0.8) * a_Colr1 * nDotL;\n' +
@@ -515,28 +515,6 @@ function VBObox1() {
     }
 
     this.vboContents = vboVertices;
-    // -------------------------------------- //
-
-    /*
-    makeHollowCylinder();
-    makeSphere();
-    
-    var mySiz = (cylVerts.length + sphVerts.length)
-    this.vboVerts = mySiz / floatsPerVertex;
-
-    var vboVertices = new Float32Array(mySiz)
-
-    cylStart = 0;
-    for(i=0,j=0; j<cylVerts.length; i++, j++) {
-        vboVertices[i] = cylVerts[j];
-    }
-    sphStart = i;
-    for(j=0; j<sphVerts.length; i++, j++) {
-        vboVertices[i] = sphVerts[j];
-    }
-
-    this.vboContents = vboVertices;
-    */
     // -------------------------------------- //
     
 
@@ -624,23 +602,12 @@ VBObox1.prototype.init = function() {
                     gl.STATIC_DRAW);	
     
       // c1) Find All Attributes:---------------------------------------------------
-    this.a_PosLoc = gl.getAttribLocation(this.shaderLoc, 'a_Pos1');
-    if(this.a_PosLoc < 0) {
-        console.log(this.constructor.name + 
-                        '.init() Failed to get GPU location of attribute a_Pos1');
-        return -1;	// error exit.
-    }
-    
+    this.a_PosLoc = gl.getAttribLocation(this.shaderLoc, 'a_Pos1');    
     this.a_ColrLoc = gl.getAttribLocation(this.shaderLoc, 'a_Colr1');
-    if(this.a_ColrLoc < 0) {
-        console.log(this.constructor.name + 
-                        '.init() failed to get the GPU location of attribute a_Colr1');
-        return -1;	// error exit.
-    }
     this.a_NormLoc = gl.getAttribLocation(this.shaderLoc, 'a_Norm1')
-    if(this.a_NormLoc < 0) {
+    if(this.a_PosLoc < 0 || this.a_ColrLoc < 0 || this.a_NormLoc < 0) {
         console.log(this.constructor.name + 
-                        '.init() failed to get the GPU location of attribute a_Norm1');
+                        '.init() failed to get the GPU location of attribute');
         return -1;	// error exit.
     }
 
@@ -650,37 +617,16 @@ VBObox1.prototype.init = function() {
       // c2) Find All Uniforms:-----------------------------------------------------
       //Get GPU storage location for each uniform var used in our shader programs: 
     this.u_MvpMatLoc = gl.getUniformLocation(this.shaderLoc, 'u_MvpMat1');
-    if (!this.u_MvpMatLoc) { 
-        console.log(this.constructor.name + 
-                        '.init() failed to get GPU location for u_MvpMat1 uniform');
-        return -1;
-    }  
-
     this.u_ModelMatLoc = gl.getUniformLocation(this.shaderLoc, 'u_ModelMat1');
-    if (!this.u_ModelMatLoc) { 
-        console.log(this.constructor.name + 
-                        '.init() failed to get GPU location for u_ModelMat1 uniform');
-        return -1;
-    }  
-
     this.u_NormalMatLoc = gl.getUniformLocation(this.shaderLoc, 'u_NormalMat1');
-    if (!this.u_NormalMatLoc) {
-        console.log(this.constructor.name +
-                        '.init() failed to get GPU location for u_NormalMat1 uniform');
-        return -1;
-    }
-
+    
     this.u_LookLoc = gl.getUniformLocation(this.shaderLoc, 'u_Look1');
-    if(this.u_LookLoc < 0) {
+ 
+    this.u_LightCodeLoc = gl.getUniformLocation(this.shaderLoc, 'u_LightCode');
+    this.u_LightPosLoc = gl.getUniformLocation(this.shaderLoc, 'u_LightPos');
+    if(!this.u_MvpMatLoc || !this.u_ModelMatLoc || !this.u_NormalMatLoc || !this.u_LookLoc || !this.u_LightPosLoc || !this.u_LightCodeLoc) {
         console.log(this.constructor.name + 
-                        '.init() failed to get the GPU location of  u_Look1 uniform');
-        return -1;	// error exit.
-    }
-
-    this.u_LightCodeLoc = gl.getUniformLocation(this.shaderLoc, 'u_LightCode')
-    if(this.u_LightCodeLoc < 0) {
-        console.log(this.constructor.name + 
-                        '.init() failed to get the GPU location of  u_LightCode uniform');
+                        '.init() failed to get the GPU location of uniform');
         return -1;	// error exit.
     }
 }
@@ -801,6 +747,9 @@ VBObox1.prototype.updateUniforms = function() {
 
     // Determine lighting type
     gl.uniform1f(this.u_LightCodeLoc, lightingMode);
+    
+    // Set light location
+    gl.uniform3f(this.u_LightPosLoc, lightPosX, lightPosY, lightPosZ);
 }
     
 
@@ -825,6 +774,7 @@ VBObox1.prototype.draw = function() {
 
     this.ModelMat = popMatrix();
     pushMatrix(this.ModelMat);
+
 
     // Draw second sphere
     this.ModelMat.translate(-1, 0, 0.5);
@@ -909,6 +859,11 @@ VBObox1.prototype.reload = function() {
 }
 
 
+function average(num1, num2) {
+    return ((num1 + num2) / 2)
+}
+
+
 //// ---------- Hollow Cylinder Functions ----------------------------- ////
 function makeHollowCylinder() {
 	var locs = new Float32Array([
@@ -919,11 +874,14 @@ function makeHollowCylinder() {
 	]);
 
 	var vertsPerLoop = 14;
-	var floatsPerLoop = vertsPerLoop*floatsPerVertex;
+	var floatsPerLoop = vertsPerLoop*floatsPerVertexNorm;
 
 	var radInner = 1;
-	var radOuter = 1.2;
-	var halfThickness = 0.2;
+    var radOuter = 1.2;
+    var halfThickness = 0.2;
+    
+    var ringWidth = radOuter - radInner;
+    var ringHeight = 2*halfThickness;
 
 	var outerTopColr = new Float32Array([1.0, 0.0, 1.0]);
 	var outerBotColr = new Float32Array([0.0, 1.0, 0.0]);
@@ -934,14 +892,20 @@ function makeHollowCylinder() {
 	cylVerts = new Float32Array(floatsPerLoop*locs.length);
 
 	for (i=0, j=0; i<locs.length; i++, j+=floatsPerLoop) {
-		// Node i on outer BOTTOM
+        // Node i on outer BOTTOM
+        // Location
 		cylVerts[j  ] = radOuter*Math.cos(locs[i]);
 		cylVerts[j+1] = radOuter*Math.sin(locs[i]);
 		cylVerts[j+2] = -halfThickness;
-		cylVerts[j+3] = 1.0;
+        cylVerts[j+3] = 1.0;
+        // Color
 		cylVerts[j+4] = outerBotColr[0];
 		cylVerts[j+5] = outerBotColr[1];
-		cylVerts[j+6] = outerBotColr[2];
+        cylVerts[j+6] = outerBotColr[2];
+        // Normal
+        cylVerts[j+7] = average(-1.0*ringWidth, cylVerts[j  ]*ringHeight);
+        cylVerts[j+8] = average(-1.0*ringWidth, cylVerts[j+1]*ringHeight);
+        cylVerts[j+9] = average(-1.0*ringWidth, cylVerts[j+2]*ringHeight);
 
 		// Node i on inner BOTTOM
 		cylVerts[j+7] = radInner*Math.cos(locs[i]);
@@ -1485,7 +1449,7 @@ VBObox2.prototype.init = function() {
     }
 
     this.lamp0.I_pos.elements.set( [0.0, 0.0, 1.0]);
-    this.lamp0.I_ambi.elements.set([0.4, 0.4, 0.4]);
+    this.lamp0.I_ambi.elements.set([0.6, 0.6, 0.6]);
     this.lamp0.I_diff.elements.set([1.0, 1.0, 1.0]);
     this.lamp0.I_spec.elements.set([1.0, 1.0, 1.0]);
 
@@ -1595,6 +1559,8 @@ VBObox2.prototype.updateUniforms = function() {
     // Determine lighting type
     gl.uniform1f(this.u_LightCodeLoc, lightingMode);
 
+    this.lamp0.I_pos.elements.set( [lightPosX, lightPosY, lightPosZ]);
+
     // Update lighting unifroms
     gl.uniform3fv(this.lamp0.u_pos, this.lamp0.I_pos.elements.slice(0,3));
     gl.uniform3fv(this.lamp0.u_ambi, this.lamp0.I_ambi.elements);
@@ -1646,6 +1612,8 @@ VBObox2.prototype.draw = function() {
     
     pushMatrix(this.ModelMat);
 
+    this.matl0.setMatl(MATL_RED_PLASTIC)
+
     // Draw sphere
     this.ModelMat.translate(1, 1, 0.5);
     this.ModelMat.scale(0.5, 0.5, 0.5);
@@ -1656,6 +1624,7 @@ VBObox2.prototype.draw = function() {
     this.ModelMat = popMatrix();
     pushMatrix(this.ModelMat);
 
+    this.matl0.setMatl(MATL_CHROME)
 
     // Draw second sphere
     this.ModelMat.translate(-1, 0, 0.5);
@@ -1666,7 +1635,7 @@ VBObox2.prototype.draw = function() {
     
     this.ModelMat = popMatrix();
 
-
+    this.matl0.setMatl(MATL_EMERALD)
 
     //--- Draw Folding Cube ---//
     this.ModelMat.translate( -0.5, -0.5, 0.0);
