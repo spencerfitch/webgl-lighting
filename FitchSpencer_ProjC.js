@@ -51,6 +51,7 @@ var D_arrowActive = false;
 var R_arrowActive = false;
 
 
+var openingBox = false;
 var g_angle_box = 90.0;				// Initial angle between the faces of the cube
 var g_angle_boxRate = 45;			// Rotation speed for sides of cube
 var g_angle_boxMax = 90.0;			// Maximum amount cube faces can rotate
@@ -1816,6 +1817,7 @@ function animate() {
 	var elapsed = now - g_last;
 	g_last = now;
 
+	/*
 	// Open/close box based on current state of boolean
 	if (!X_keyActive && C_keyActive && (g_angle_box > g_angle_boxMin)) {
 		// Fold up the box
@@ -1828,12 +1830,25 @@ function animate() {
 		g_angle_box = Math.min(g_angle_boxMax, newBoxAngle);
 	}
 	// If both/neither X and C pressed, then maintain current opening
+	*/
 
-	
-  	// If currently paused, do not update automatic animations
-  	if (pauseAnimations) {
+	// If currently paused, do not update automatic animations
+	if (pauseAnimations) {
 		return;
 	}
+
+
+	if (openingBox) {
+		var newBoxAngle = g_angle_box + (g_angle_boxRate * elapsed)/1000.0;
+		g_angle_box = (newBoxAngle <= g_angle_boxMax) ? newBoxAngle : g_angle_box;
+		openingBox = (newBoxAngle <= g_angle_boxMax);
+	} else {
+		var newBoxAngle = g_angle_box - (g_angle_boxRate * elapsed)/1000.0;
+		g_angle_box = (newBoxAngle >= g_angle_boxMin) ? newBoxAngle : g_angle_box;
+		openingBox = (newBoxAngle < g_angle_boxMin);
+	}
+	
+  	
 
 	var newAngle = g_angle01 + (g_angle01Rate * elapsed) / 1000.0;
 	if(newAngle > 180.0) newAngle = newAngle - 360.0;
