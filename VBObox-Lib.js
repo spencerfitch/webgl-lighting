@@ -30,8 +30,9 @@ function VBObox0() {
     makeGroundGrid();
     makeAxisMarker();
     makePauseIcon();
+    makeLightMarker();
     
-    var mySiz = (gndVerts.length + axisVerts.length + pausVerts.length);
+    var mySiz = (gndVerts.length + axisVerts.length + pausVerts.length + ligtVerts.length);
 
     this.vboVerts = mySiz / floatsPerVertex;
 
@@ -43,11 +44,15 @@ function VBObox0() {
     }
     axisMarkerStart = i;
     for(j=0; j<axisVerts.length; i++, j++) {
-        vboVertices[i] = axisVerts[j]
+        vboVertices[i] = axisVerts[j];
     }
     pauseIconStart = i;
     for(j=0; j<pausVerts.length; i++, j++) {
-        vboVertices[i] = pausVerts[j]
+        vboVertices[i] = pausVerts[j];
+    }
+    lightMarkerStart = i;
+    for(j=0; j<ligtVerts.length; i++, j++) {
+        vboVertices[i] = ligtVerts[j];
     }
 
     this.vboContents = vboVertices;
@@ -303,6 +308,20 @@ VBObox0.prototype.draw = function() {
     }
 
     drawAxisMarker();
+
+    pushMatrix(this.ModelMat);
+
+    this.ModelMat.translate(lightPosX, lightPosY, lightPosZ);
+    this.ModelMat.scale(0.05, 0.05, 0.05);
+    gl.uniformMatrix4fv(this.u_ModelMatLoc,
+                        false,
+                        this.ModelMat.elements);
+    drawLightMarker();
+    
+
+
+    this.ModelMat = popMatrix();
+
     this.ModelMat.scale(0.1, 0.1, 0.1);
     gl.uniformMatrix4fv(this.u_ModelMatLoc,
                         false,
@@ -428,7 +447,70 @@ function drawPauseIcon() {
 }
 //// ------------------------------------------------------------------ ////
 
+/// ----------- Light Marker Functions -------------------------------- ////
+function makeLightMarker() {
+    ligtVerts = new Float32Array([
+        // Bottom
+        -0.5, -0.5, -0.5, 1.0,      1.0, 1.0, 1.0,
+         0.5, -0.5, -0.5, 1.0,      1.0, 1.0, 1.0,
+        -0.5,  0.5, -0.5, 1.0,      1.0, 1.0, 1.0,
 
+         0.5,  0.5, -0.5, 1.0,      1.0, 1.0, 1.0,
+         0.5, -0.5, -0.5, 1.0,      1.0, 1.0, 1.0,
+        -0.5,  0.5, -0.5, 1.0,      1.0, 1.0, 1.0,
+
+        // Side1
+        -0.5, -0.5, -0.5, 1.0,      1.0, 1.0, 1.0,
+        -0.5, -0.5,  0.5, 1.0,      1.0, 1.0, 1.0,
+        -0.5,  0.5, -0.5, 1.0,      1.0, 1.0, 1.0,
+
+        -0.5,  0.5,  0.5, 1.0,      1.0, 1.0, 1.0,
+        -0.5, -0.5,  0.5, 1.0,      1.0, 1.0, 1.0,
+        -0.5,  0.5, -0.5, 1.0,      1.0, 1.0, 1.0,
+
+        // Side2
+        -0.5,  0.5, -0.5, 1.0,      1.0, 1.0, 1.0,
+         0.5,  0.5, -0.5, 1.0,      1.0, 1.0, 1.0,
+        -0.5,  0.5,  0.5, 1.0,      1.0, 1.0, 1.0,
+        
+         0.5,  0.5,  0.5, 1.0,      1.0, 1.0, 1.0,
+         0.5,  0.5, -0.5, 1.0,      1.0, 1.0, 1.0,
+        -0.5,  0.5,  0.5, 1.0,      1.0, 1.0, 1.0,
+
+        // Side3
+         0.5,  0.5, -0.5, 1.0,      1.0, 1.0, 1.0,
+         0.5,  0.5,  0.5, 1.0,      1.0, 1.0, 1.0,
+         0.5, -0.5, -0.5, 1.0,      1.0, 1.0, 1.0,
+         
+         0.5, -0.5,  0.5, 1.0,      1.0, 1.0, 1.0,
+         0.5,  0.5,  0.5, 1.0,      1.0, 1.0, 1.0,
+         0.5, -0.5, -0.5, 1.0,      1.0, 1.0, 1.0,
+
+         // Side4
+         0.5, -0.5, -0.5, 1.0,      1.0, 1.0, 1.0,
+         0.5, -0.5,  0.5, 1.0,      1.0, 1.0, 1.0,
+        -0.5, -0.5, -0.5, 1.0,      1.0, 1.0, 1.0,
+         
+        -0.5, -0.5,  0.5, 1.0,      1.0, 1.0, 1.0,
+         0.5, -0.5,  0.5, 1.0,      1.0, 1.0, 1.0,
+        -0.5, -0.5, -0.5, 1.0,      1.0, 1.0, 1.0,
+
+        // Top
+        -0.5, -0.5,  0.5, 1.0,      1.0, 1.0, 1.0,
+         0.5, -0.5,  0.5, 1.0,      1.0, 1.0, 1.0,
+        -0.5,  0.5,  0.5, 1.0,      1.0, 1.0, 1.0,
+        
+         0.5,  0.5,  0.5, 1.0,      1.0, 1.0, 1.0,
+         0.5, -0.5,  0.5, 1.0,      1.0, 1.0, 1.0,
+        -0.5,  0.5,  0.5, 1.0,      1.0, 1.0, 1.0,
+    ]);
+}
+function drawLightMarker() {
+    gl.drawArrays(gl.TRIANGLES,
+                  lightMarkerStart/floatsPerVertex,
+                  ligtVerts.length/floatsPerVertex);
+}
+//// ------------------------------------------------------------------ ////
 
 
 
