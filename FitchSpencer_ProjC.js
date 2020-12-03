@@ -100,6 +100,10 @@ var lightPosX = 0.0;
 var lightPosY = 0.0;
 var lightPosZ = 1.0;
 
+var lightColr_Ambi = new Float32Array([0.2, 0.2, 0.2]);
+var lightColr_Diff = new Float32Array([0.8, 0.8, 0.8]);
+var lightColr_Spec = new Float32Array([1.0, 1.0, 1.0]);
+
 function main() {
 //==============================================================================
 
@@ -144,6 +148,28 @@ function resizeCanvas() {
 
 }
 
+function updateColors() {
+	let ambiString = document.getElementById('lightColrAmbi').value;
+	let diffString = document.getElementById('lightColrDiff').value;
+	let specString = document.getElementById('lightColrSpec').value;
+
+	let ambiR = parseInt(Number('0x'+ambiString.slice(1,3))) / 255;
+	let ambiG = parseInt(Number('0x'+ambiString.slice(3,5))) / 255;
+	let ambiB = parseInt(Number('0x'+ambiString.slice(5,7))) / 255;
+
+	let diffR = parseInt(Number('0x'+diffString.slice(1,3))) / 255;
+	let diffG = parseInt(Number('0x'+diffString.slice(3,5))) / 255;
+	let diffB = parseInt(Number('0x'+diffString.slice(5,7))) / 255;
+	
+	let specR = parseInt(Number('0x'+specString.slice(1,3))) / 255;
+	let specG = parseInt(Number('0x'+specString.slice(3,5))) / 255;
+	let specB = parseInt(Number('0x'+specString.slice(5,7))) / 255;
+
+	lightColr_Ambi.set([ambiR, ambiG, ambiB]);
+	lightColr_Diff.set([diffR, diffG, diffB]);
+	lightColr_Spec.set([specR, specG, specB]);
+}
+
 
 // ANIMATION: create 'tick' variable whose value is this function:
 //----------------- 
@@ -158,8 +184,8 @@ function tick() {
 	document.getElementById('LPYlabel').innerHTML = Number(lightPosY).toFixed(1);
 	document.getElementById('LPZlabel').innerHTML = Number(lightPosZ).toFixed(1);
 
-
-    animate();		// Update the rotation angle
+	animate();		// Update the rotation angle
+	updateColors();
 	drawAll();		// Draw all parts
 	
 

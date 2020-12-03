@@ -527,9 +527,9 @@ function VBObox1() {
         'uniform vec3 u_LightPos;\n' +
         'uniform vec3 u_Look1;\n' +
         //
-        //'uniform vec3 u_LightColrDiff;\n' +
-        //'uniform vec3 u_LightColrAmbi;\n' +
-        //'uniform vec3 u_LightColrSpec;\n'
+        'uniform vec3 u_LightColrDiff;\n' +
+        'uniform vec3 u_LightColrAmbi;\n' +
+        'uniform vec3 u_LightColrSpec;\n' +
         //
         'uniform float u_LightCode;\n' +
         //
@@ -548,8 +548,8 @@ function VBObox1() {
         '   vec3 lightVec = normalize(u_LightPos - vec3(vertexPosition));\n' +
         //
         '   float nDotL = max(dot(lightVec, normVec), 0.0);\n' +
-        '   vec3 diffuse = vec3(0.8, 0.8, 0.8) * a_Colr1 * nDotL;\n' +
-        '   vec3 ambient = vec3(0.2, 0.2, 0.2) * a_Colr1;\n' +
+        '   vec3 diffuse = u_LightColrDiff * a_Colr1 * nDotL;\n' +
+        '   vec3 ambient = u_LightColrAmbi * a_Colr1;\n' +
         //
         '   float specConst = 0.0;\n' +
         '   vec3 V = normalize(-u_Look1);\n' +
@@ -564,7 +564,7 @@ function VBObox1() {
         '       float specAngle = max(dot(H, normVec), 0.0);\n' +
         '       specConst = pow(specAngle, 80.0);\n' +
         '   };\n' +
-        '   vec3 specular = specConst * vec3(1.0, 1.0, 1.0);\n' +
+        '   vec3 specular = specConst * u_LightColrSpec;\n' +
         //
         '   v_Colr1 = vec4(diffuse + ambient + specular, 1.0);\n' +
         '}\n';
@@ -709,11 +709,12 @@ VBObox1.prototype.init = function() {
     this.u_LightCodeLoc = gl.getUniformLocation(this.shaderLoc, 'u_LightCode');
     this.u_LightPosLoc = gl.getUniformLocation(this.shaderLoc, 'u_LightPos');
 
-    //this.u_LightColrLoc_ambi = gl.getUniformLocation(this.shaderLoc, 'u_LightColrAmbi');
-    //this.u_LightColrLoc_diff = gl.getUniformLocation(this.shaderLoc, 'u_LightColrDiff');
-    //this.u_LightColrLoc_spec = gl.getUniformLocation(this.shaderLoc, 'u_LightColrSpec');
+    this.u_LightColrLoc_ambi = gl.getUniformLocation(this.shaderLoc, 'u_LightColrAmbi');
+    this.u_LightColrLoc_diff = gl.getUniformLocation(this.shaderLoc, 'u_LightColrDiff');
+    this.u_LightColrLoc_spec = gl.getUniformLocation(this.shaderLoc, 'u_LightColrSpec');
     
-    if(!this.u_MvpMatLoc || !this.u_ModelMatLoc || !this.u_NormalMatLoc || !this.u_LookLoc || !this.u_LightPosLoc || !this.u_LightCodeLoc) {
+    if(!this.u_MvpMatLoc || !this.u_ModelMatLoc || !this.u_NormalMatLoc || !this.u_LookLoc || !this.u_LightPosLoc || !this.u_LightCodeLoc
+        || !this.u_LightColrLoc_ambi || !this.u_LightColrLoc_diff || !this.u_LightColrLoc_spec) {
         console.log(this.constructor.name + 
                         '.init() failed to get the GPU location of uniform');
         return -1;	// error exit.
@@ -839,6 +840,11 @@ VBObox1.prototype.updateUniforms = function() {
     
     // Set light location
     gl.uniform3f(this.u_LightPosLoc, lightPosX, lightPosY, lightPosZ);
+
+    // Set light colors
+    gl.uniform3fv(this.u_LightColrLoc_ambi, lightColr_Ambi);
+    gl.uniform3fv(this.u_LightColrLoc_diff, lightColr_Diff);
+    gl.uniform3fv(this.u_LightColrLoc_spec, lightColr_Spec);
 }
     
 

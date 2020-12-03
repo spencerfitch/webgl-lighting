@@ -41,15 +41,15 @@ Email: SpencerFitch2022@u.northwestern.edu
 			<a>Z: </a>
 				<input id='lightPosZ' type='range' min='-5' max='5' value='1.0' class="slider" step="0.1" onkeydown="event.preventDefault()">
 				<a id="LPZlabel">-5.0</a> </br>
-			<div style="padding-left: 5px; margin-top: 10px;">Light Colors</div>
-			<a style="padding-right: 5px; text-align: end; width: 80px; display: inline-block;">Ambient</a>
-				<input id='lightColrAmbi' type='color' value="#ffffff"> </br>
-			<a style="padding-right: 5px; text-align: end; width: 80px; display: inline-block;">Diffuse</a>
-				<input id='lightColrDiff' type='color'> </br>
-			<a style="padding-right: 5px; text-align: end; width: 80px; display: inline-block;">Specular</a>
-				<input id='lightColrSpec' type='color'> </br>
-			<a style="padding-right: 5px; text-align: end; width: 80px; display: inline-block;">Emissive</a>
-				<input id='lightColrEmit' type='color'> </br>
+			<div id="colorContainer">
+				<div style="padding-left: 5px; margin-top: 10px;">Light Colors</div>
+				<a style="padding-right: 5px; text-align: end; width: 80px; display: inline-block;">Ambient</a>
+					<input id='lightColrAmbi' type='color' value="#333333"> </br>
+				<a style="padding-right: 5px; text-align: end; width: 80px; display: inline-block;">Diffuse</a>
+					<input id='lightColrDiff' type='color' value='#cccccc'> </br>
+				<a style="padding-right: 5px; text-align: end; width: 80px; display: inline-block;">Specular</a>
+					<input id='lightColrSpec' type='color' value='#ffffff'> </br>
+			</div>
 		</div>
 		<img src="images/ProjectBInstructions.png" style="height: 100%; padding-left: 20ch;">
 	</div>
