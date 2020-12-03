@@ -498,8 +498,9 @@ function VBObox1() {
 
     // -------- INIT VERTEX BUFFER ---------- //
     makeSphere();
+    makeBoxSide();
 
-    var mySiz = sphVerts.length
+    var mySiz = (sphVerts.length + boxVerts.length);
     this.vboVerts = mySiz / floatsPerVertexNorm;
 
     var vboVertices = new Float32Array(mySiz);
@@ -507,6 +508,10 @@ function VBObox1() {
     sphStart = 0;
     for(i=0, j=0; j<sphVerts.length; i++, j++) {
         vboVertices[i] = sphVerts[j];
+    }
+    boxStart = i;
+    for(j=0; j<boxVerts.length; i++, j++) {
+        vboVertices[i] = boxVerts[j];
     }
 
     this.vboContents = vboVertices;
@@ -583,7 +588,7 @@ function VBObox1() {
     
     // Uniform locations &values in our shaders
     this.ModelMat = new Matrix4();	// Transforms CVV axes to model axes.
-    this.MvpMat = new Matrix4();
+    this.WorldMat = new Matrix4();
     this.NormalMat = new Matrix4();  
 	
     this.u_MvpMatLoc;       // GPU location for uniform
@@ -757,7 +762,7 @@ VBObox1.prototype.adjust = function() {
         // Adjust values for our uniforms,
     
 
-    this.MvpMat.set(g_worldMat);
+    this.WorldMat.set(g_worldMat);
     this.ModelMat.setIdentity();
     this.updateUniforms();
 
@@ -779,14 +784,15 @@ VBObox1.prototype.adjust = function() {
 
 
 VBObox1.prototype.updateUniforms = function() {
-    
-    this.MvpMat.multiply(this.ModelMat);
+    var MvpMat = new Matrix4();
+    MvpMat.set(this.WorldMat);
+    MvpMat.multiply(this.ModelMat);
 
     this.NormalMat.setInverseOf(this.ModelMat);
     this.NormalMat.transpose();
 
     // Send  new Matrix values to the GPU's uniform
-    gl.uniformMatrix4fv(this.u_MvpMatLoc, false, this.MvpMat.elements);	
+    gl.uniformMatrix4fv(this.u_MvpMatLoc, false, MvpMat.elements);	
     gl.uniformMatrix4fv(this.u_ModelMatLoc, false, this.ModelMat.elements);
     gl.uniformMatrix4fv(this.u_NormalMatLoc, false, this.NormalMat.elements);
 
@@ -808,7 +814,6 @@ VBObox1.prototype.draw = function() {
                         '.draw() call you needed to call this.switchToMe()!!');
     }  
 
-    pushMatrix(this.MvpMat);
     pushMatrix(this.ModelMat);
 
     // Draw sphere
@@ -819,7 +824,7 @@ VBObox1.prototype.draw = function() {
     drawSphere();
 
     this.ModelMat = popMatrix();
-    this.MvpMat = popMatrix();
+    pushMatrix(this.ModelMat);
 
     // Draw second sphere
     this.ModelMat.translate(-1, 0, 0.5);
@@ -828,6 +833,43 @@ VBObox1.prototype.draw = function() {
     this.updateUniforms();
     drawSphere();
 
+    this.ModelMat = popMatrix();
+
+
+    //--- Draw Folding Cube ---//
+    this.ModelMat.translate( -0.5, -0.5, 0.0);
+    this.ModelMat.translate( 1.0, -1.0, 0.0);
+    this.ModelMat.scale(0.5, 0.5, 0.5);
+    this.updateUniforms();
+    drawBoxSide();
+
+    this.ModelMat.rotate(180, 0, 1, 0);
+    this.ModelMat.translate(-1.0, 0.0, 0.0);
+    this.ModelMat.rotate(-90-g_angle_box, 1, 0, 0);
+    this.updateUniforms();
+    drawBoxSide();
+
+    this.ModelMat.translate(1.0, 0.0, 0.0);
+    this.ModelMat.rotate(-90+g_angle_box, 0, 1, 0);
+    this.updateUniforms();
+    drawBoxSide();
+
+    this.ModelMat.translate(1.0, 0.0, 0.0);
+    this.ModelMat.rotate(-90+g_angle_box, 0, 1, 0);
+    this.updateUniforms();
+    drawBoxSide();
+
+    this.ModelMat.translate(1.0, 0.0, 0.0);
+    this.ModelMat.rotate(-90+g_angle_box, 0, 1, 0);
+    this.updateUniforms();
+    drawBoxSide();
+
+    this.ModelMat.rotate(180, 1, 0, 0);
+    this.ModelMat.translate(0.0, -1.0, 0.0);
+    this.ModelMat.rotate(-90-g_angle_box, 1, 0, 0);
+    this.updateUniforms();
+    drawBoxSide();
+    //--- End Folding Cube ---//
 
 
     /*
@@ -1108,7 +1150,73 @@ function drawSphere() {
 //// ------------------------------------------------------------------ ////
 
 
+//// ------------ Box Side Functions ---------------------------------- ////
+function makeBoxSide() {
+    var sq2 = Math.sqrt(2);
 
+    boxVerts = new Float32Array([
+        // Outside Face
+	    0.00, 0.00, 0.00, 1.0,		0.0, 0.0, 0.0,      0.0, 0.0, -1.0, // Node 0
+	    1.00, 0.00, 0.00, 1.0,		0.0, 0.0, 1.0,      0.0, 0.0, -1.0, // Node 1  	(Blue)
+	    0.00, 1.00, 0.00, 1.0,		0.0, 1.0, 1.0,      0.0, 0.0, -1.0, // Node 3  	(Cyan)
+	    1.00, 1.00, 0.00, 1.0,		0.0, 1.0, 0.0,      0.0, 0.0, -1.0, // Node 2  	(Green)
+	    1.00, 0.00, 0.00, 1.0,		0.0, 0.0, 1.0,      0.0, 0.0, -1.0, // Node 1  	(Blue)
+	    0.00, 1.00, 0.00, 1.0,		0.0, 1.0, 1.0,      0.0, 0.0, -1.0, // Node 3  	(Cyan)
+	    // Inside Face
+	    0.10, 0.10, 0.10, 1.0,		1.0, 0.0, 0.0,      0.0, 0.0, 1.0,  // Node 8  	(Red)
+	    0.90, 0.10, 0.10, 1.0,		1.0, 0.0, 1.0,      0.0, 0.0, 1.0,  // Node 9  	(Purple)
+	    0.10, 0.90, 0.10, 1.0,		1.0, 1.0, 1.0,      0.0, 0.0, 1.0,  // Node 11 	(White)
+	    0.90, 0.90, 0.10, 1.0,		1.0, 1.0, 0.0,      0.0, 0.0, 1.0,  // Node 10 	(Yellow)
+	    0.90, 0.10, 0.10, 1.0,		1.0, 0.0, 1.0,      0.0, 0.0, 1.0,  // Node 9  	(Purple)
+	    0.10, 0.90, 0.10, 1.0,		1.0, 1.0, 1.0,      0.0, 0.0, 1.0,  // Node 11 	(White)
+    	// Inside Edge 1
+	    0.00, 0.00, 0.00, 1.0,		0.0, 0.0, 0.0,      0.0,-sq2, sq2,  // Node 0  	(Black)
+	    0.10, 0.10, 0.10, 1.0,		1.0, 0.0, 0.0,      0.0,-sq2, sq2,  // Node 8  	(Red)
+	    0.50, 0.00, 0.00, 1.0,		0.0, 1.0, 0.0,      0.0,-sq2, sq2,  // Node 12 	(Green)
+	    1.00, 0.00, 0.00, 1.0,		0.0, 0.0, 1.0,      0.0,-sq2, sq2,  // Node 1  	(Blue)
+	    0.90, 0.10, 0.10, 1.0,		1.0, 0.0, 1.0,      0.0,-sq2, sq2,  // Node 9  	(Purple)
+	    0.50, 0.00, 0.00, 1.0,		0.0, 1.0, 0.0,      0.0,-sq2, sq2,  // Node 12 	(Green)
+	    0.10, 0.10, 0.10, 1.0,		1.0, 0.0, 0.0,      0.0,-sq2, sq2,  // Node 8  	(Red)
+	    0.90, 0.10, 0.10, 1.0,		1.0, 0.0, 1.0,      0.0,-sq2, sq2,  // Node 9  	(Purple)
+	    0.50, 0.00, 0.00, 1.0,		0.0, 1.0, 0.0,      0.0,-sq2, sq2,  // Node 12 	(Green)
+	    // Inside Edge 2
+	    1.00, 0.00, 0.00, 1.0,		0.0, 0.0, 1.0,      sq2, 0.0, sq2,  // Node 1  	(Blue)
+	    0.90, 0.10, 0.10, 1.0,		1.0, 0.0, 1.0,      sq2, 0.0, sq2,  // Node 9  	(Purple)
+	    1.00, 0.50, 0.00, 1.0,		0.0, 1.0, 1.0,      sq2, 0.0, sq2,  // Node 13	(Cyan)
+	    1.00, 1.00, 0.00, 1.0,		0.0, 1.0, 0.0,      sq2, 0.0, sq2,  // Node 2  	(Green)
+	    0.90, 0.90, 0.10, 1.0,		1.0, 1.0, 0.0,      sq2, 0.0, sq2,  // Node 10 	(Yellow)
+	    1.00, 0.50, 0.00, 1.0,		0.0, 1.0, 1.0,      sq2, 0.0, sq2,  // Node 13	(Cyan)
+	    0.90, 0.10, 0.10, 1.0,		1.0, 0.0, 1.0,      sq2, 0.0, sq2,  // Node 9  	(Purple)
+	    0.90, 0.90, 0.10, 1.0,		1.0, 1.0, 0.0,      sq2, 0.0, sq2,  // Node 10 	(Yellow)
+	    1.00, 0.50, 0.00, 1.0,		0.0, 1.0, 1.0,      sq2, 0.0, sq2,  // Node 13	(Cyan)
+	    // Inside Edge 3
+	    1.00, 1.00, 0.00, 1.0,		0.0, 1.0, 0.0,      0.0, sq2, sq2,  // Node 2  	(Green)
+	    0.90, 0.90, 0.10, 1.0,		1.0, 1.0, 0.0,      0.0, sq2, sq2,  // Node 10 	(Yellow)
+	    0.50, 1.00, 0.00, 1.0,		0.0, 0.0, 0.0,      0.0, sq2, sq2,  // Node 14	(Black)
+	    0.00, 1.00, 0.00, 1.0,		0.0, 1.0, 1.0,      0.0, sq2, sq2,  // Node 3  	(Cyan)
+	    0.10, 0.90, 0.10, 1.0,		1.0, 1.0, 1.0,      0.0, sq2, sq2,  // Node 11 	(White)
+	    0.50, 1.00, 0.00, 1.0,		0.0, 0.0, 0.0,      0.0, sq2, sq2,  // Node 14	(Black)
+	    0.90, 0.90, 0.10, 1.0,		1.0, 1.0, 0.0,      0.0, sq2, sq2,  // Node 10 	(Yellow)
+	    0.10, 0.90, 0.10, 1.0,		1.0, 1.0, 1.0,      0.0, sq2, sq2,  // Node 11 	(White)
+	    0.50, 1.00, 0.00, 1.0,		0.0, 0.0, 0.0,      0.0, sq2, sq2,  // Node 14	(Black)
+	    // Inside Edge 4
+	    0.00, 1.00, 0.00, 1.0,		0.0, 1.0, 1.0,     -sq2, 0.0, sq2,  // Node 3  	(Cyan)
+	    0.10, 0.90, 0.10, 1.0,		1.0, 1.0, 1.0,     -sq2, 0.0, sq2,  // Node 11 	(White)
+	    0.00, 0.50, 0.00, 1.0,		0.0, 0.0, 1.0,     -sq2, 0.0, sq2,  // Node 15	(Blue)
+	    0.00, 0.00, 0.00, 1.0,		0.0, 0.0, 0.0,     -sq2, 0.0, sq2,  // Node 0  	(Black)
+	    0.10, 0.10, 0.10, 1.0,		1.0, 0.0, 0.0,     -sq2, 0.0, sq2,  // Node 8  	(Red)
+	    0.00, 0.50, 0.00, 1.0,		0.0, 0.0, 1.0,     -sq2, 0.0, sq2,  // Node 15	(Blue)
+	    0.10, 0.10, 0.10, 1.0,		1.0, 0.0, 0.0,     -sq2, 0.0, sq2,  // Node 8  	(Red)
+	    0.10, 0.90, 0.10, 1.0,		1.0, 1.0, 1.0,     -sq2, 0.0, sq2,  // Node 11 	(White)
+	    0.00, 0.50, 0.00, 1.0,		0.0, 0.0, 1.0,     -sq2, 0.0, sq2,  // Node 15	(Blue)
+    ]);
+}
+
+function drawBoxSide() {
+    gl.drawArrays(gl.TRIANGLES,
+        boxStart/floatsPerVertexNorm,
+        boxVerts.length/floatsPerVertexNorm);
+}
 
 
 
@@ -1178,6 +1286,8 @@ function VBObox2() {
         //
         'uniform vec3 u_Look;\n' +
         //
+        'uniform float u_LightCode;\n' +
+        //
         'varying vec3 v_Normal;\n' +
         'varying vec4 v_Position;\n' +
         'varying vec3 v_Kd;\n' +
@@ -1187,12 +1297,22 @@ function VBObox2() {
         '   vec3 lightDirection = normalize(u_LampSet[0].pos - v_Position.xyz);\n' +
         '   vec3 V = normalize(-u_Look);\n'+
         '   float nDotL = max(dot(lightDirection, normal), 0.0);\n' +
-        '   vec3 H = normalize(lightDirection + V); \n' +
-        '   float nDotH = max(dot(H, normal), 0.0);\n' +
-        '   float e64 = pow(nDotH, float(u_MatlSet[0].shiny));\n' +
+        //
         '   vec3 emissive = u_MatlSet[0].emit;\n' +
         '   vec3 ambient = u_LampSet[0].ambi * u_MatlSet[0].ambi;\n' +
         '   vec3 diffuse = u_LampSet[0].diff * v_Kd * nDotL;\n' +
+        //
+        '   float vecDot = 0.0;\n' +
+        '   if (u_LightCode > 0.5) {\n' +
+                // Phong Lighting
+        '       vec3 R = reflect(-lightDirection, normal);\n' +
+        '       vecDot = max(dot(R, V), 0.0);\n' +
+        '   } else {\n' +
+                // Blinn-Phong Lighting
+        '       vec3 H = normalize(lightDirection + V); \n' +
+        '       vecDot = max(dot(H, normal), 0.0);\n' +
+        '   };\n' +
+        '   float e64 = pow(vecDot, float(u_MatlSet[0].shiny));\n' +
         '   vec3 speculr = u_LampSet[0].spec * u_MatlSet[0].spec * e64;\n' +
         '   gl_FragColor = vec4(emissive + ambient + diffuse + speculr, 1.0);\n' +
         '}\n';
@@ -1201,8 +1321,9 @@ function VBObox2() {
 
     // -------- INIT VERTEX BUFFER ---------- //
     makeSphere();
+    makeBoxSide();
 
-    var mySiz = sphVerts.length
+    var mySiz = (sphVerts.length + boxVerts.length);
     this.vboVerts = mySiz / floatsPerVertexNorm;
 
     var vboVertices = new Float32Array(mySiz);
@@ -1210,6 +1331,10 @@ function VBObox2() {
     sphStart = 0;
     for(i=0, j=0; j<sphVerts.length; i++, j++) {
         vboVertices[i] = sphVerts[j];
+    }
+    boxStart = i;
+    for(j=0; j<boxVerts.length; i++, j++) {
+        vboVertices[i] = boxVerts[j];
     }
 
     this.vboContents = vboVertices;
@@ -1264,7 +1389,7 @@ function VBObox2() {
     
     // Uniform locations &values in our shaders
     this.ModelMat = new Matrix4();	// Transforms CVV axes to model axes.
-    this.MvpMat = new Matrix4();
+    this.WorldMat = new Matrix4();
     this.NormalMat = new Matrix4();  
 
     this.u_ModelMatLoc;				// GPU location for uniform
@@ -1327,6 +1452,7 @@ VBObox2.prototype.init = function() {
       // c2) Find All Uniforms:-----------------------------------------------------
       //Get GPU storage location for each uniform var used in our shader programs: 
     this.u_LookLoc = gl.getUniformLocation(this.shaderLoc, 'u_Look');
+    this.u_LightCodeLoc = gl.getUniformLocation(this.shaderLoc, 'u_LightCode');
     this.u_ModelMatLoc = gl.getUniformLocation(this.shaderLoc, 'u_ModelMat');
     this.u_MvpMatLoc = gl.getUniformLocation(this.shaderLoc, 'u_MvpMat');
     this.u_NormalMatLoc = gl.getUniformLocation(this.shaderLoc, 'u_NormalMat');
@@ -1358,7 +1484,7 @@ VBObox2.prototype.init = function() {
         return -1;
     }
 
-    this.lamp0.I_pos.elements.set( [6.0, 5.0, 5.0]);
+    this.lamp0.I_pos.elements.set( [0.0, 0.0, 1.0]);
     this.lamp0.I_ambi.elements.set([0.4, 0.4, 0.4]);
     this.lamp0.I_diff.elements.set([1.0, 1.0, 1.0]);
     this.lamp0.I_spec.elements.set([1.0, 1.0, 1.0]);
@@ -1441,7 +1567,7 @@ VBObox2.prototype.adjust = function() {
         // Adjust values for our uniforms,
     
 
-    this.MvpMat.set(g_worldMat);
+    this.WorldMat.set(g_worldMat);
     this.ModelMat.setIdentity();
     this.updateUniforms();
 
@@ -1466,6 +1592,9 @@ VBObox2.prototype.updateUniforms = function() {
     // Update view uniform
     gl.uniform3f(this.u_LookLoc, L_x-e_x, L_y-e_y, L_z-e_z);
 
+    // Determine lighting type
+    gl.uniform1f(this.u_LightCodeLoc, lightingMode);
+
     // Update lighting unifroms
     gl.uniform3fv(this.lamp0.u_pos, this.lamp0.I_pos.elements.slice(0,3));
     gl.uniform3fv(this.lamp0.u_ambi, this.lamp0.I_ambi.elements);
@@ -1479,15 +1608,17 @@ VBObox2.prototype.updateUniforms = function() {
     gl.uniform3fv(this.matl0.uLoc_Ks, this.matl0.K_spec.slice(0, 3));
     gl.uniform1i(this.matl0.uLoc_Kshiny, parseInt(this.matl0.K_shiny, 10));
 
+    var MvpMat = new Matrix4();
+    MvpMat.set(this.WorldMat);
 
-    this.MvpMat.multiply(this.ModelMat);
+    MvpMat.multiply(this.ModelMat);
     
     this.NormalMat.setInverseOf(this.ModelMat);
     this.NormalMat.transpose();
 
     // Send  new 'ModelMat' values to the GPU's uniform
     gl.uniformMatrix4fv(this.u_ModelMatLoc, false, this.ModelMat.elements);	
-    gl.uniformMatrix4fv(this.u_MvpMatLoc, false, this.MvpMat.elements);
+    gl.uniformMatrix4fv(this.u_MvpMatLoc, false, MvpMat.elements);
     gl.uniformMatrix4fv(this.u_NormalMatLoc, false, this.NormalMat.elements);
 }
     
@@ -1504,14 +1635,15 @@ VBObox2.prototype.draw = function() {
 
     //pushMatrix(this.MvpMat);
 
+    /*
     // Draw sphere
     this.ModelMat.translate(1, 1, 0);
     this.ModelMat.scale(0.5, 0.5, 0.5);
     this.updateUniforms();
     drawSphere();
+    */
 
-    /*
-    pushMatrix(this.MvpMat);
+    
     pushMatrix(this.ModelMat);
 
     // Draw sphere
@@ -1522,7 +1654,8 @@ VBObox2.prototype.draw = function() {
     drawSphere();
 
     this.ModelMat = popMatrix();
-    this.MvpMat = popMatrix();
+    pushMatrix(this.ModelMat);
+
 
     // Draw second sphere
     this.ModelMat.translate(-1, 0, 0.5);
@@ -1530,7 +1663,45 @@ VBObox2.prototype.draw = function() {
     this.ModelMat.rotate(g_angle_gyro, 0, 0, 1);
     this.updateUniforms();
     drawSphere();
-    */
+    
+    this.ModelMat = popMatrix();
+
+
+
+    //--- Draw Folding Cube ---//
+    this.ModelMat.translate( -0.5, -0.5, 0.0);
+    this.ModelMat.translate( 1.0, -1.0, 0.0);
+    this.ModelMat.scale(0.5, 0.5, 0.5);
+    this.updateUniforms();
+    drawBoxSide();
+
+    this.ModelMat.rotate(180, 0, 1, 0);
+    this.ModelMat.translate(-1.0, 0.0, 0.0);
+    this.ModelMat.rotate(-90-g_angle_box, 1, 0, 0);
+    this.updateUniforms();
+    drawBoxSide();
+
+    this.ModelMat.translate(1.0, 0.0, 0.0);
+    this.ModelMat.rotate(-90+g_angle_box, 0, 1, 0);
+    this.updateUniforms();
+    drawBoxSide();
+
+    this.ModelMat.translate(1.0, 0.0, 0.0);
+    this.ModelMat.rotate(-90+g_angle_box, 0, 1, 0);
+    this.updateUniforms();
+    drawBoxSide();
+
+    this.ModelMat.translate(1.0, 0.0, 0.0);
+    this.ModelMat.rotate(-90+g_angle_box, 0, 1, 0);
+    this.updateUniforms();
+    drawBoxSide();
+
+    this.ModelMat.rotate(180, 1, 0, 0);
+    this.ModelMat.translate(0.0, -1.0, 0.0);
+    this.ModelMat.rotate(-90-g_angle_box, 1, 0, 0);
+    this.updateUniforms();
+    drawBoxSide();
+    //--- End Folding Cube ---//
 
     /*
     this.MvpMat = popMatrix();

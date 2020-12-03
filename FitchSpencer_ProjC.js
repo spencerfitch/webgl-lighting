@@ -51,7 +51,7 @@ var D_arrowActive = false;
 var R_arrowActive = false;
 
 
-var g_angle_box = 0.0;				// Initial angle between the faces of the cube
+var g_angle_box = 90.0;				// Initial angle between the faces of the cube
 var g_angle_boxRate = 45;			// Rotation speed for sides of cube
 var g_angle_boxMax = 90.0;			// Maximum amount cube faces can rotate
 var g_angle_boxMin = 0.0;			// Minimum amount cube faces can rotate
@@ -237,11 +237,11 @@ function updateCamera() {
 	if (L_arrowActive && !R_arrowActive) {
 		// Just L arrow pressed ---> Rotate left by 1 degree
 		//console.log("Left arrow pressed: Rotate left!");
-		theta_H += 0.6*Math.PI/180;
+		theta_H += 0.8*Math.PI/180;
 	} else if (!L_arrowActive && R_arrowActive) {
 		// Just R arrow pressed ---> Rotate right by 1 degree
 		//console.log("Right arrow pressed: Rotate right!");
-		theta_H -= 0.6*Math.PI/180;
+		theta_H -= 0.8*Math.PI/180;
 	}
 	// Ensure theta_H bounded between -pi and pi
 	if (theta_H > Math.PI) {
@@ -255,12 +255,12 @@ function updateCamera() {
 		// Just U arrow pressed ---> Rotate up
 		//console.log("Up arrow pressed: Rotate up!");
 		// Rotate by 1 degree and limit to within PI/2
-		theta_V += 0.5*Math.PI/180;
+		theta_V += 0.7*Math.PI/180;
 		theta_V = Math.min(theta_V, Math.PI/2);
 	} else if (!U_arrowActive && D_arrowActive) {
 		//console.log("Down arrow pressed: Rotate down!");
 		// Rotate by 1 degree and limit to within PI/2
-		theta_V -= 0.5*Math.PI/180
+		theta_V -= 0.7*Math.PI/180
 		theta_V = Math.max(theta_V, -Math.PI/2);
 	}
 	
@@ -1622,6 +1622,7 @@ function DrawPlane() {
 
 // ------------ Part 2 - Folding Cube Drawing Functions ------------- //
 
+/*
 // Draw a particular side of the cube specified by idx
 function drawCubeSide(idx) {
 	var start3DVertex = 239+(48*idx);		// First vertex for the 3D object
@@ -1679,7 +1680,7 @@ function drawFoldingCube() {
 	gl.uniformMatrix4fv(g_modelMatLoc, false, mvpMatrix.elements);
 }
 //// ------------------------------------------------------------------ ////
-
+*/
 
 //// ---------- Draw NU Logo ------------------------------------------ ////
 function drawNULogo() {
