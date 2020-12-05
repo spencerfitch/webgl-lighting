@@ -583,8 +583,9 @@ function VBObox1() {
     // -------- INIT VERTEX BUFFER ---------- //
     makeSphere();
     makeBoxSide();
+    makeHollowCylinder();
 
-    var mySiz = (sphVerts.length + boxVerts.length);
+    var mySiz = (sphVerts.length + boxVerts.length + cylVerts.length);
     this.vboVerts = mySiz / floatsPerVertexNorm;
 
     var vboVertices = new Float32Array(mySiz);
@@ -596,6 +597,10 @@ function VBObox1() {
     boxStart = i;
     for(j=0; j<boxVerts.length; i++, j++) {
         vboVertices[i] = boxVerts[j];
+    }
+    cylStart = i;
+    for(j=0; j<cylVerts.length; i++, j++) {
+        vboVertices[i] = cylVerts[j];
     }
 
     this.vboContents = vboVertices;
@@ -879,7 +884,7 @@ VBObox1.prototype.draw = function() {
     drawSphere();
 
     this.ModelMat = popMatrix();
-
+    pushMatrix(this.ModelMat);
 
     //--- Draw Folding Cube ---//
     this.ModelMat.translate( -0.5, -0.5, 0.0);
@@ -916,25 +921,24 @@ VBObox1.prototype.draw = function() {
     drawBoxSide();
     //--- End Folding Cube ---//
 
+    this.ModelMat = popMatrix();
 
-    /*
-    // Draw rotating rings
-    this.MvpMat.translate(-0.5, 0.5, 0.0)
-    this.MvpMat.scale(0.2, 0.2, 0.2);             // Shrink model
-    this.MvpMat.rotate(90, 0, 1, 0);              // Rotate Upright
-    this.MvpMat.translate(-1.2, 0.0, 0.0);        // Move out of ground
-    this.MvpMat.rotate(g_angle_gyro, 1, 0, 0);    // Spin around center
+    //--- Draw Rotating Rings ---//
+    this.ModelMat.translate(-0.5, -0.5, 0.0);
+    this.ModelMat.scale(0.2, 0.2, 0.2);
+    this.ModelMat.rotate(90, 0, 1, 0);
+    this.ModelMat.translate(-1.2, 0.0, 0.0);
+    this.ModelMat.rotate(3*g_angle_gyro, 1, 0, 0);
     this.updateUniforms();
     drawHollowCylinder();
-    
-    var scale = 1.0/1.2;
-    for(i=0; i<5; i++) {
-        this.MvpMat.rotate(g_angle_gyro, 1-i%2, i%2, 0);
-        this.MvpMat.scale(scale, scale, scale);
+
+    var scale=1.0/1.2;
+    for (i=0; i<5; i++) {
+        this.ModelMat.rotate(3*g_angle_gyro, 1-i%2, i%2, 0);
+        this.ModelMat.scale(scale, scale, scale);
         this.updateUniforms();
         drawHollowCylinder();
     }
-    */
     
     
 }
@@ -954,10 +958,6 @@ VBObox1.prototype.reload = function() {
 }
 
 
-function average(num1, num2) {
-    return ((num1 + num2) / 2)
-}
-
 
 //// ---------- Hollow Cylinder Functions ----------------------------- ////
 function makeHollowCylinder() {
@@ -968,7 +968,7 @@ function makeHollowCylinder() {
 		Math.PI*3/2, Math.PI*19/12, Math.PI*5/3, Math.PI*7/4, Math.PI*11/6, Math.PI*23/12,
 	]);
 
-	var vertsPerLoop = 14;
+	var vertsPerLoop = 24;
 	var floatsPerLoop = vertsPerLoop*floatsPerVertexNorm;
 
 	var radInner = 1;
@@ -978,16 +978,18 @@ function makeHollowCylinder() {
     var ringWidth = radOuter - radInner;
     var ringHeight = 2*halfThickness;
 
+    var zNorm = (ringWidth + ringHeight) / 2;
+
 	var outerTopColr = new Float32Array([1.0, 0.0, 1.0]);
 	var outerBotColr = new Float32Array([0.0, 1.0, 0.0]);
 
 	var innerTopColr = new Float32Array([0.0, 0.0, 1.0]);
 	var innerBotColr = new Float32Array([1.0, 1.0, 0.0]);
 	
-	cylVerts = new Float32Array(floatsPerLoop*locs.length);
+    cylVerts = new Float32Array(floatsPerLoop*locs.length);
 
 	for (i=0, j=0; i<locs.length; i++, j+=floatsPerLoop) {
-        // Node i on outer BOTTOM
+        // Node i on outer BOTTOM (1)
         // Location
 		cylVerts[j  ] = radOuter*Math.cos(locs[i]);
 		cylVerts[j+1] = radOuter*Math.sin(locs[i]);
@@ -998,137 +1000,316 @@ function makeHollowCylinder() {
 		cylVerts[j+5] = outerBotColr[1];
         cylVerts[j+6] = outerBotColr[2];
         // Normal
-        cylVerts[j+7] = average(-1.0*ringWidth, cylVerts[j  ]*ringHeight);
-        cylVerts[j+8] = average(-1.0*ringWidth, cylVerts[j+1]*ringHeight);
-        cylVerts[j+9] = average(-1.0*ringWidth, cylVerts[j+2]*ringHeight);
+        cylVerts[j+7] = cylVerts[j  ];
+        cylVerts[j+8] = cylVerts[j+1];
+        cylVerts[j+9] = -zNorm;
 
-		// Node i on inner BOTTOM
-		cylVerts[j+7] = radInner*Math.cos(locs[i]);
-		cylVerts[j+8] = radInner*Math.sin(locs[i]);
-		cylVerts[j+9] = -halfThickness;
-		cylVerts[j+10] = 1.0;
-		cylVerts[j+11] = innerBotColr[0];
-		cylVerts[j+12] = innerBotColr[1];
-		cylVerts[j+13] = innerBotColr[2];
+		// Node i on inner BOTTOM (2)
+		cylVerts[j+10] = radInner*Math.cos(locs[i]);
+		cylVerts[j+11] = radInner*Math.sin(locs[i]);
+		cylVerts[j+12] = -halfThickness;
+		cylVerts[j+13] = 1.0;
+		cylVerts[j+14] = innerBotColr[0];
+		cylVerts[j+15] = innerBotColr[1];
+        cylVerts[j+16] = innerBotColr[2];
+        cylVerts[j+17] = -cylVerts[j+10];
+        cylVerts[j+18] = -cylVerts[j+11];
+        cylVerts[j+19] = -zNorm;
 
-		// Node i+1 on outer BOTTOM
-		cylVerts[j+14] = radOuter*Math.cos(locs[(i+1)%locs.length]);
-		cylVerts[j+15] = radOuter*Math.sin(locs[(i+1)%locs.length]);
-		cylVerts[j+16] = -halfThickness;
-		cylVerts[j+17] = 1.0;
-		cylVerts[j+18] = outerBotColr[0];
-		cylVerts[j+19] = outerBotColr[1];
-		cylVerts[j+20] = outerBotColr[2];
-		
-		
-		// Node i on inner BOTTOM
-		cylVerts[j+21] = radInner*Math.cos(locs[i]);
-		cylVerts[j+22] = radInner*Math.sin(locs[i]);
-		cylVerts[j+23] = -halfThickness;
-		cylVerts[j+24] = 1.0;
-		cylVerts[j+25] = innerBotColr[0];
-		cylVerts[j+26] = innerBotColr[1];
-		cylVerts[j+27] = innerBotColr[2];
+		// Node i+1 on outer BOTTOM (3)
+		cylVerts[j+20] = radOuter*Math.cos(locs[(i+1)%locs.length]);
+		cylVerts[j+21] = radOuter*Math.sin(locs[(i+1)%locs.length]);
+		cylVerts[j+22] = -halfThickness;
+		cylVerts[j+23] = 1.0;
+		cylVerts[j+24] = outerBotColr[0];
+		cylVerts[j+25] = outerBotColr[1];
+		cylVerts[j+26] = outerBotColr[2];
+        cylVerts[j+27] = cylVerts[j+20];
+        cylVerts[j+28] = cylVerts[j+21];
+        cylVerts[j+29] = -zNorm;
+        
 
-		// Node i+1 on inner BOTTOM
-		cylVerts[j+28] = radInner*Math.cos(locs[(i+1)%locs.length]);
-		cylVerts[j+29] = radInner*Math.sin(locs[(i+1)%locs.length]);
-		cylVerts[j+30] = -halfThickness;
-		cylVerts[j+31] = 1.0;
-		cylVerts[j+32] = innerBotColr[0];
-		cylVerts[j+33] = innerBotColr[1];
-		cylVerts[j+34] = innerBotColr[2];
 
-		// Node i+1 on inner TOP
-		cylVerts[j+35] = radInner*Math.cos(locs[(i+1)%locs.length]);
-		cylVerts[j+36] = radInner*Math.sin(locs[(i+1)%locs.length]);
-		cylVerts[j+37] = halfThickness;
-		cylVerts[j+38] = 1.0;
-		cylVerts[j+39] = innerTopColr[0];
-		cylVerts[j+40] = innerTopColr[1];
-		cylVerts[j+41] = innerTopColr[2];
 
-		// Node i on inner BOTTOM
-		cylVerts[j+42] = radInner*Math.cos(locs[i]);
-		cylVerts[j+43] = radInner*Math.sin(locs[i]);
-		cylVerts[j+44] = -halfThickness;
-		cylVerts[j+45] = 1.0;
-		cylVerts[j+46] = innerBotColr[0];
-		cylVerts[j+47] = innerBotColr[1];
-		cylVerts[j+48] = innerBotColr[2];
+        // Node i+1 on inner BOTTOM (4)
+		cylVerts[j+30] = radInner*Math.cos(locs[(i+1)%locs.length]);
+		cylVerts[j+31] = radInner*Math.sin(locs[(i+1)%locs.length]);
+		cylVerts[j+32] = -halfThickness;
+		cylVerts[j+33] = 1.0;
+		cylVerts[j+34] = innerBotColr[0];
+		cylVerts[j+35] = innerBotColr[1];
+		cylVerts[j+36] = innerBotColr[2];
+        cylVerts[j+37] = -cylVerts[j+30];
+        cylVerts[j+38] = -cylVerts[j+31];
+        cylVerts[j+39] = -zNorm;
 
-		// Node i on inner TOP
-		cylVerts[j+49] = radInner*Math.cos(locs[i]);
-		cylVerts[j+50] = radInner*Math.sin(locs[i]);
-		cylVerts[j+51] = halfThickness;
-		cylVerts[j+52] = 1.0;
-		cylVerts[j+53] = innerTopColr[0];
-		cylVerts[j+54] = innerTopColr[1];
-		cylVerts[j+55] = innerTopColr[2];
+		// Node i on inner BOTTOM (2)
+		cylVerts[j+40] = radInner*Math.cos(locs[i]);
+		cylVerts[j+41] = radInner*Math.sin(locs[i]);
+		cylVerts[j+42] = -halfThickness;
+		cylVerts[j+43] = 1.0;
+		cylVerts[j+44] = innerBotColr[0];
+		cylVerts[j+45] = innerBotColr[1];
+		cylVerts[j+46] = innerBotColr[2];
+        cylVerts[j+47] = -cylVerts[j+40]
+        cylVerts[j+48] = -cylVerts[j+41]
+        cylVerts[j+49] = -zNorm;
 
-		// Node i on outer TOP
-		cylVerts[j+56] = radOuter*Math.cos(locs[i]);
-		cylVerts[j+57] = radOuter*Math.sin(locs[i]);
-		cylVerts[j+58] = halfThickness;
-		cylVerts[j+59] = 1.0;
-		cylVerts[j+60] = outerTopColr[0];
-		cylVerts[j+61] = outerTopColr[1];
-		cylVerts[j+62] = outerTopColr[2];
+        // Node i+1 on outer BOTTOM (3)
+		cylVerts[j+50] = radOuter*Math.cos(locs[(i+1)%locs.length]);
+		cylVerts[j+51] = radOuter*Math.sin(locs[(i+1)%locs.length]);
+		cylVerts[j+52] = -halfThickness;
+		cylVerts[j+53] = 1.0;
+		cylVerts[j+54] = outerBotColr[0];
+		cylVerts[j+55] = outerBotColr[1];
+		cylVerts[j+56] = outerBotColr[2];
+        cylVerts[j+57] = cylVerts[j+50];
+        cylVerts[j+58] = cylVerts[j+51];
+        cylVerts[j+59] = -zNorm;
+        
 
-		// Node i+1 on inner TOP
-		cylVerts[j+63] = radInner*Math.cos(locs[(i+1)%locs.length]);
-		cylVerts[j+64] = radInner*Math.sin(locs[(i+1)%locs.length]);
-		cylVerts[j+65] = halfThickness;
-		cylVerts[j+66] = 1.0;
-		cylVerts[j+67] = innerTopColr[0];
-		cylVerts[j+68] = innerTopColr[1];
-		cylVerts[j+69] = innerTopColr[2];
 
-		// Node i+1 on outer TOP
-		cylVerts[j+70] = radOuter*Math.cos(locs[(i+1)%locs.length]);
-		cylVerts[j+71] = radOuter*Math.sin(locs[(i+1)%locs.length]);
-		cylVerts[j+72] = halfThickness;
-		cylVerts[j+73] = 1.0;
-		cylVerts[j+74] = outerTopColr[0];
-		cylVerts[j+75] = outerTopColr[1];
-		cylVerts[j+76] = outerTopColr[2];
 
-		// Node i+1 on outer BOTTOM
-		cylVerts[j+77] = radOuter*Math.cos(locs[(i+1)%locs.length]);
-		cylVerts[j+78] = radOuter*Math.sin(locs[(i+1)%locs.length]);
-		cylVerts[j+79] = -halfThickness;
-		cylVerts[j+80] = 1.0;
-		cylVerts[j+81] = outerBotColr[0];
-		cylVerts[j+82] = outerBotColr[1];
-		cylVerts[j+83] = outerBotColr[2];
 
-		// Node i on outer TOP
-		cylVerts[j+84] = radOuter*Math.cos(locs[i]);
-		cylVerts[j+85] = radOuter*Math.sin(locs[i]);
-		cylVerts[j+86] = halfThickness;
-		cylVerts[j+87] = 1.0;
-		cylVerts[j+88] = outerTopColr[0];
-		cylVerts[j+89] = outerTopColr[1];
-		cylVerts[j+90] = outerTopColr[2];
+        // Node i+1 on inner BOTTOM (4)
+		cylVerts[j+60] = radInner*Math.cos(locs[(i+1)%locs.length]);
+		cylVerts[j+61] = radInner*Math.sin(locs[(i+1)%locs.length]);
+		cylVerts[j+62] = -halfThickness;
+		cylVerts[j+63] = 1.0;
+		cylVerts[j+64] = innerBotColr[0];
+		cylVerts[j+65] = innerBotColr[1];
+		cylVerts[j+66] = innerBotColr[2];
+        cylVerts[j+67] = -cylVerts[j+60];
+        cylVerts[j+68] = -cylVerts[j+61];
+        cylVerts[j+69] = -zNorm;
 
-		// Node i on outer BOTTOM
-		cylVerts[j+91] = radOuter*Math.cos(locs[i]);
-		cylVerts[j+92] = radOuter*Math.sin(locs[i]);
-		cylVerts[j+93] = -halfThickness;
-		cylVerts[j+94] = 1.0;
-		cylVerts[j+95] = outerBotColr[0];
-		cylVerts[j+96] = outerBotColr[1];
-		cylVerts[j+97] = outerBotColr[2];
-		
+        // Node i on inner BOTTOM (2)
+        cylVerts[j+70] = radInner*Math.cos(locs[i]);
+        cylVerts[j+71] = radInner*Math.sin(locs[i]);
+        cylVerts[j+72] = -halfThickness;
+        cylVerts[j+73] = 1.0;
+        cylVerts[j+74] = innerBotColr[0];
+        cylVerts[j+75] = innerBotColr[1];
+        cylVerts[j+76] = innerBotColr[2];
+        cylVerts[j+77] = -cylVerts[j+70];
+        cylVerts[j+78] = -cylVerts[j+71];
+        cylVerts[j+79] = -zNorm;
+
+		// Node i+1 on inner TOP (5)
+		cylVerts[j+80] = radInner*Math.cos(locs[(i+1)%locs.length]);
+		cylVerts[j+81] = radInner*Math.sin(locs[(i+1)%locs.length]);
+		cylVerts[j+82] = halfThickness;
+		cylVerts[j+83] = 1.0;
+		cylVerts[j+84] = innerTopColr[0];
+		cylVerts[j+85] = innerTopColr[1];
+		cylVerts[j+86] = innerTopColr[2];
+        cylVerts[j+87] = -cylVerts[j+80];
+        cylVerts[j+88] = -cylVerts[j+81];
+        cylVerts[j+89] = zNorm;
+
+
+
+
+		// Node i on inner TOP (6)
+		cylVerts[j+90] = radInner*Math.cos(locs[i]);
+		cylVerts[j+91] = radInner*Math.sin(locs[i]);
+		cylVerts[j+92] = halfThickness;
+		cylVerts[j+93] = 1.0;
+		cylVerts[j+94] = innerTopColr[0];
+		cylVerts[j+95] = innerTopColr[1];
+		cylVerts[j+96] = innerTopColr[2];
+        cylVerts[j+97] = -cylVerts[j+90];
+        cylVerts[j+98] = -cylVerts[j+91];
+        cylVerts[j+99] = zNorm;
+        
+        // Node i on inner BOTTOM (2)
+        cylVerts[j+100] = radInner*Math.cos(locs[i]);
+        cylVerts[j+101] = radInner*Math.sin(locs[i]);
+        cylVerts[j+102] = -halfThickness;
+        cylVerts[j+103] = 1.0;
+        cylVerts[j+104] = innerBotColr[0];
+        cylVerts[j+105] = innerBotColr[1];
+        cylVerts[j+106] = innerBotColr[2];
+        cylVerts[j+107] = -cylVerts[j+100];
+        cylVerts[j+108] = -cylVerts[j+101];
+        cylVerts[j+109] = -zNorm;
+
+		// Node i+1 on inner TOP (5)
+		cylVerts[j+110] = radInner*Math.cos(locs[(i+1)%locs.length]);
+		cylVerts[j+111] = radInner*Math.sin(locs[(i+1)%locs.length]);
+		cylVerts[j+112] = halfThickness;
+		cylVerts[j+113] = 1.0;
+		cylVerts[j+114] = innerTopColr[0];
+		cylVerts[j+115] = innerTopColr[1];
+		cylVerts[j+116] = innerTopColr[2];
+        cylVerts[j+117] = -cylVerts[j+110];
+        cylVerts[j+118] = -cylVerts[j+111];
+        cylVerts[j+119] = zNorm;
+
+
+
+
+        // Node i+1 on inner TOP (5)
+		cylVerts[j+120] = radInner*Math.cos(locs[(i+1)%locs.length]);
+		cylVerts[j+121] = radInner*Math.sin(locs[(i+1)%locs.length]);
+		cylVerts[j+122] = halfThickness;
+		cylVerts[j+123] = 1.0;
+		cylVerts[j+124] = innerTopColr[0];
+		cylVerts[j+125] = innerTopColr[1];
+		cylVerts[j+126] = innerTopColr[2];
+        cylVerts[j+127] = -cylVerts[j+120];
+        cylVerts[j+128] = -cylVerts[j+121];
+        cylVerts[j+129] = zNorm;
+
+        // Node i on inner TOP (6)
+		cylVerts[j+130] = radInner*Math.cos(locs[i]);
+		cylVerts[j+131] = radInner*Math.sin(locs[i]);
+		cylVerts[j+132] = halfThickness;
+		cylVerts[j+133] = 1.0;
+		cylVerts[j+134] = innerTopColr[0];
+		cylVerts[j+135] = innerTopColr[1];
+		cylVerts[j+136] = innerTopColr[2];
+        cylVerts[j+137] = -cylVerts[j+130];
+        cylVerts[j+138] = -cylVerts[j+131];
+        cylVerts[j+139] = zNorm;
+
+        // Node i+1 on outer TOP (8)
+		cylVerts[j+140] = radOuter*Math.cos(locs[(i+1)%locs.length]);
+		cylVerts[j+141] = radOuter*Math.sin(locs[(i+1)%locs.length]);
+		cylVerts[j+142] = halfThickness;
+		cylVerts[j+143] = 1.0;
+		cylVerts[j+144] = outerTopColr[0];
+		cylVerts[j+145] = outerTopColr[1];
+		cylVerts[j+146] = outerTopColr[2];
+        cylVerts[j+147] = cylVerts[j+140];
+        cylVerts[j+148] = cylVerts[j+141];
+        cylVerts[j+149] = zNorm;
+
+
+
+
+        // Node i on outer TOP (7)
+		cylVerts[j+150] = radOuter*Math.cos(locs[i]);
+		cylVerts[j+151] = radOuter*Math.sin(locs[i]);
+		cylVerts[j+152] = halfThickness;
+		cylVerts[j+153] = 1.0;
+		cylVerts[j+154] = outerTopColr[0];
+		cylVerts[j+155] = outerTopColr[1];
+		cylVerts[j+156] = outerTopColr[2];
+        cylVerts[j+157] = cylVerts[j+150];
+        cylVerts[j+158] = cylVerts[j+151];
+        cylVerts[j+159] = zNorm;
+
+        // Node i on inner TOP (6)
+		cylVerts[j+160] = radInner*Math.cos(locs[i]);
+		cylVerts[j+161] = radInner*Math.sin(locs[i]);
+		cylVerts[j+162] = halfThickness;
+		cylVerts[j+163] = 1.0;
+		cylVerts[j+164] = innerTopColr[0];
+		cylVerts[j+165] = innerTopColr[1];
+		cylVerts[j+166] = innerTopColr[2];
+        cylVerts[j+167] = -cylVerts[j+160];
+        cylVerts[j+168] = -cylVerts[j+161];
+        cylVerts[j+169] = zNorm;
+
+        // Node i+1 on outer TOP (8)
+		cylVerts[j+170] = radOuter*Math.cos(locs[(i+1)%locs.length]);
+		cylVerts[j+171] = radOuter*Math.sin(locs[(i+1)%locs.length]);
+		cylVerts[j+172] = halfThickness;
+		cylVerts[j+173] = 1.0;
+		cylVerts[j+174] = outerTopColr[0];
+		cylVerts[j+175] = outerTopColr[1];
+		cylVerts[j+176] = outerTopColr[2];
+        cylVerts[j+177] = cylVerts[j+170];
+        cylVerts[j+178] = cylVerts[j+171];
+        cylVerts[j+179] = zNorm;
+
+
+
+
+        // Node i on outer BOTTOM (1)
+		cylVerts[j+180] = radOuter*Math.cos(locs[i]);
+		cylVerts[j+181] = radOuter*Math.sin(locs[i]);
+		cylVerts[j+182] = -halfThickness;
+		cylVerts[j+183] = 1.0;
+		cylVerts[j+184] = outerBotColr[0];
+		cylVerts[j+185] = outerBotColr[1];
+		cylVerts[j+186] = outerBotColr[2];
+        cylVerts[j+187] = cylVerts[j+180];
+        cylVerts[j+188] = cylVerts[j+181];
+        cylVerts[j+189] = -zNorm;
+
+		// Node i+1 on outer BOTTOM (3)
+		cylVerts[j+190] = radOuter*Math.cos(locs[(i+1)%locs.length]);
+		cylVerts[j+191] = radOuter*Math.sin(locs[(i+1)%locs.length]);
+		cylVerts[j+192] = -halfThickness;
+		cylVerts[j+193] = 1.0;
+		cylVerts[j+194] = outerBotColr[0];
+		cylVerts[j+195] = outerBotColr[1];
+		cylVerts[j+196] = outerBotColr[2];
+        cylVerts[j+197] = cylVerts[j+190];
+        cylVerts[j+198] = cylVerts[j+191];
+        cylVerts[j+199] = -zNorm;
+
+		// Node i on outer TOP (7)
+		cylVerts[j+200] = radOuter*Math.cos(locs[i]);
+		cylVerts[j+201] = radOuter*Math.sin(locs[i]);
+		cylVerts[j+202] = halfThickness;
+		cylVerts[j+203] = 1.0;
+		cylVerts[j+204] = outerTopColr[0];
+		cylVerts[j+205] = outerTopColr[1];
+		cylVerts[j+206] = outerTopColr[2];
+        cylVerts[j+207] = cylVerts[j+200];
+        cylVerts[j+208] = cylVerts[j+201];
+        cylVerts[j+209] = zNorm;
+
+				
+
+
+        // Node i+1 on outer TOP (8)
+		cylVerts[j+210] = radOuter*Math.cos(locs[(i+1)%locs.length]);
+		cylVerts[j+211] = radOuter*Math.sin(locs[(i+1)%locs.length]);
+		cylVerts[j+212] = halfThickness;
+		cylVerts[j+213] = 1.0;
+		cylVerts[j+214] = outerTopColr[0];
+		cylVerts[j+215] = outerTopColr[1];
+		cylVerts[j+216] = outerTopColr[2];
+        cylVerts[j+217] = cylVerts[j+210];
+        cylVerts[j+218] = cylVerts[j+211];
+        cylVerts[j+219] = zNorm;
+
+        // Node i+1 on outer BOTTOM (3)
+		cylVerts[j+220] = radOuter*Math.cos(locs[(i+1)%locs.length]);
+		cylVerts[j+221] = radOuter*Math.sin(locs[(i+1)%locs.length]);
+		cylVerts[j+222] = -halfThickness;
+		cylVerts[j+223] = 1.0;
+		cylVerts[j+224] = outerBotColr[0];
+		cylVerts[j+225] = outerBotColr[1];
+		cylVerts[j+226] = outerBotColr[2];
+        cylVerts[j+227] = cylVerts[j+220];
+        cylVerts[j+228] = cylVerts[j+221];
+        cylVerts[j+229] = -zNorm;
+
+		// Node i on outer TOP (7)
+		cylVerts[j+230] = radOuter*Math.cos(locs[i]);
+		cylVerts[j+231] = radOuter*Math.sin(locs[i]);
+		cylVerts[j+232] = halfThickness;
+		cylVerts[j+233] = 1.0;
+		cylVerts[j+234] = outerTopColr[0];
+		cylVerts[j+235] = outerTopColr[1];
+		cylVerts[j+236] = outerTopColr[2];
+        cylVerts[j+237] = cylVerts[j+230];
+        cylVerts[j+238] = cylVerts[j+231];
+        cylVerts[j+239] = zNorm;
 
 	}
 
 }
 
 function drawHollowCylinder() {
-	gl.drawArrays(gl.TRIANGLE_STRIP,
-		cylStart/floatsPerVertex,
-		cylVerts.length/floatsPerVertex);
+	gl.drawArrays(gl.TRIANGLES,
+		cylStart/floatsPerVertexNorm,
+		cylVerts.length/floatsPerVertexNorm);
 }
 //// ------------------------------------------------------------------ ////
 
@@ -1276,7 +1457,7 @@ function drawBoxSide() {
         boxStart/floatsPerVertexNorm,
         boxVerts.length/floatsPerVertexNorm);
 }
-
+//// ------------------------------------------------------------------ ////
 
 
 
@@ -1381,8 +1562,9 @@ function VBObox2() {
     // -------- INIT VERTEX BUFFER ---------- //
     makeSphere();
     makeBoxSide();
+    makeHollowCylinder();
 
-    var mySiz = (sphVerts.length + boxVerts.length);
+    var mySiz = (sphVerts.length + boxVerts.length + cylVerts.length);
     this.vboVerts = mySiz / floatsPerVertexNorm;
 
     var vboVertices = new Float32Array(mySiz);
@@ -1394,6 +1576,10 @@ function VBObox2() {
     boxStart = i;
     for(j=0; j<boxVerts.length; i++, j++) {
         vboVertices[i] = boxVerts[j];
+    }
+    cylStart = i;
+    for(j=0; j<cylVerts.length; i++, j++) {
+        vboVertices[i] = cylVerts[j];
     }
 
     this.vboContents = vboVertices;
@@ -1505,8 +1691,6 @@ VBObox2.prototype.init = function() {
         return -1;	// error exit.
     }
 
-    // this.a_ColrLoc
-
       
       // c2) Find All Uniforms:-----------------------------------------------------
       //Get GPU storage location for each uniform var used in our shader programs: 
@@ -1542,11 +1726,6 @@ VBObox2.prototype.init = function() {
                         '.init() failed to get GPU Reflectance storage locations');
         return -1;
     }
-
-    this.lamp0.I_pos.elements.set( [0.0, 0.0, 1.0]);
-    this.lamp0.I_ambi.elements.set([0.6, 0.6, 0.6]);
-    this.lamp0.I_diff.elements.set([1.0, 1.0, 1.0]);
-    this.lamp0.I_spec.elements.set([1.0, 1.0, 1.0]);
 
 }
    
@@ -1630,20 +1809,6 @@ VBObox2.prototype.adjust = function() {
     this.ModelMat.setIdentity();
     this.updateUniforms();
 
-    /*
-    this.ModelMat.setRotate(90, 0, 1, 0);
-
-    this.MvpMat.set(g_worldMat);
-    this.MvpMat.multiply(this.ModelMat);
-
-    this.NormalMat.setInverseOf(this.ModelMat);
-    this.NormalMat.transpose();
-    
-    // Send  new 'ModelMat' values to the GPU's uniform
-    gl.uniformMatrix4fv(this.u_ModelMatLoc, false, this.ModelMat.elements);	
-    gl.uniformMatrix4fv(this.u_MvpMatLoc, false, this.MvpMat.elements);
-    gl.uniformMatrix4fv(this.u_NormalMatLoc, false, this.NormalMat.elements);
-    */
 }
 
 
@@ -1655,6 +1820,10 @@ VBObox2.prototype.updateUniforms = function() {
     gl.uniform1f(this.u_LightCodeLoc, lightingMode);
 
     this.lamp0.I_pos.elements.set( [lightPosX, lightPosY, lightPosZ]);
+
+    this.lamp0.I_ambi.elements.set(lightColr_Ambi);
+    this.lamp0.I_diff.elements.set(lightColr_Diff);
+    this.lamp0.I_spec.elements.set(lightColr_Spec);
 
     // Update lighting unifroms
     gl.uniform3fv(this.lamp0.u_pos, this.lamp0.I_pos.elements.slice(0,3));
@@ -1694,20 +1863,10 @@ VBObox2.prototype.draw = function() {
                         '.draw() call you needed to call this.switchToMe()!!');
     }  
 
-    //pushMatrix(this.MvpMat);
-
-    /*
-    // Draw sphere
-    this.ModelMat.translate(1, 1, 0);
-    this.ModelMat.scale(0.5, 0.5, 0.5);
-    this.updateUniforms();
-    drawSphere();
-    */
-
     
     pushMatrix(this.ModelMat);
 
-    this.matl0.setMatl(MATL_RED_PLASTIC)
+    this.matl0.setMatl(MATL_RED_PLASTIC);
 
     // Draw sphere
     this.ModelMat.translate(1, 1, 0.5);
@@ -1729,6 +1888,7 @@ VBObox2.prototype.draw = function() {
     drawSphere();
     
     this.ModelMat = popMatrix();
+    pushMatrix(this.ModelMat);
 
     this.matl0.setMatl(MATL_EMERALD)
 
@@ -1766,6 +1926,27 @@ VBObox2.prototype.draw = function() {
     this.updateUniforms();
     drawBoxSide();
     //--- End Folding Cube ---//
+
+    this.ModelMat = popMatrix();
+
+    this.matl0.setMatl(MATL_RED_PLASTIC)
+
+    //--- Draw Rotating Rings ---//
+    this.ModelMat.translate(-0.5, -0.5, 0.0);
+    this.ModelMat.scale(0.2, 0.2, 0.2);
+    this.ModelMat.rotate(90, 0, 1, 0);
+    this.ModelMat.translate(-1.2, 0.0, 0.0);
+    this.ModelMat.rotate(3*g_angle_gyro, 1, 0, 0);
+    this.updateUniforms();
+    drawHollowCylinder();
+
+    var scale=1.0/1.2;
+    for (i=0; i<5; i++) {
+        this.ModelMat.rotate(3*g_angle_gyro, 1-i%2, i%2, 0);
+        this.ModelMat.scale(scale, scale, scale);
+        this.updateUniforms();
+        drawHollowCylinder();
+    }
 
     /*
     this.MvpMat = popMatrix();

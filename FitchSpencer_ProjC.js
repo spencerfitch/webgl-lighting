@@ -94,6 +94,8 @@ var phongBox = new VBObox2();
 var VBO0Active = true;
 var VBO1Active = true;
 
+var lightOn = true;
+
 var lightingMode = 1.0;
 
 var lightPosX = 0.0;
@@ -148,7 +150,7 @@ function resizeCanvas() {
 
 }
 
-function updateColors() {
+function updateLightColors() {
 	let ambiString = document.getElementById('lightColrAmbi').value;
 	let diffString = document.getElementById('lightColrDiff').value;
 	let specString = document.getElementById('lightColrSpec').value;
@@ -170,6 +172,26 @@ function updateColors() {
 	lightColr_Spec.set([specR, specG, specB]);
 }
 
+function toggleLightONOFF() {
+	if (lightOn) {
+		// Turn light off
+		lightOn = false;
+		console.log('turn light off');
+		lightColr_Ambi.set([0.0, 0.0, 0.0]);
+		lightColr_Diff.set([0.0, 0.0, 0.0]);
+		lightColr_Spec.set([0.0, 0.0, 0.0]);
+
+		document.getElementById('btnToggleLight').innerHTML = 'Turn Light ON';
+	} else {
+		lightOn = true;
+
+		updateLightColors();
+
+		document.getElementById('btnToggleLight').innerHTML = 'Turn Light OFF';
+
+	}
+}
+
 
 // ANIMATION: create 'tick' variable whose value is this function:
 //----------------- 
@@ -185,17 +207,19 @@ function tick() {
 	document.getElementById('LPZlabel').innerHTML = Number(lightPosZ).toFixed(1);
 
 	animate();		// Update the rotation angle
-	updateColors();
+	if (lightOn) {
+		updateLightColors();
+	}
 	drawAll();		// Draw all parts
 	
 
 	// Display information about camera location
 	document.getElementById('cameraEyePos').innerHTML=
-		'Camera Position : &emsp;&emsp;(' + e_x.toFixed(1) + ', ' + e_y.toFixed(1) + ', ' + e_z.toFixed(1) + ')';
+		'(' + e_x.toFixed(1) + ', ' + e_y.toFixed(1) + ', ' + e_z.toFixed(1) + ')';
 	document.getElementById('cameraRotHz').innerHTML= 
-		'Horizontal Rotation : &emsp;'+(theta_H*180.0/Math.PI).toFixed(1);
+		(theta_H*180.0/Math.PI).toFixed(1)+'°';
 	document.getElementById('cameraRotVt').innerHTML=
-		'Vertial Pitch : &emsp;&emsp;&emsp;&emsp;'+(theta_V*180.0/Math.PI).toFixed(1);
+		(theta_V*180.0/Math.PI).toFixed(1)+'°';
 
 
 
@@ -348,7 +372,6 @@ function updateCamera() {
 
 function initVertexBuffer() {
 //==============================================================================
-
 	var atop = 0.1 + .004/.3;		// Top of aileron edge height
 	var abtm = 0.1 - .002/.3;		// Bottom of aileron edge height
 	var f23 = 2.0/3.0;				// Exact 2/3 value 
@@ -1651,68 +1674,6 @@ function DrawPlane() {
 
 
 
-// ------------ Part 2 - Folding Cube Drawing Functions ------------- //
-
-/*
-// Draw a particular side of the cube specified by idx
-function drawCubeSide(idx) {
-	var start3DVertex = 239+(48*idx);		// First vertex for the 3D object
-	var startOLVertex = 527+(16*idx);	// First vertex for the outline
-	// Draw 3D Object
-	gl.drawArrays(gl.TRIANGLES, start3DVertex, 48);
-	// Draw object outline
-	gl.drawArrays(gl.LINE_LOOP, startOLVertex, 4);
-	gl.drawArrays(gl.LINE_LOOP, startOLVertex+4, 4);
-	gl.drawArrays(gl.LINES, startOLVertex+8, 8);
-}
-
-
-function drawFoldingCube() {
-	pushMatrix(mvpMatrix);
-
-	// Draw cube base
-	drawCubeSide(0);
-
-	mvpMatrix.rotate(-g_angle_box, 0, 1, 0);
-
-	gl.uniformMatrix4fv(g_modelMatLoc, false, mvpMatrix.elements);
-	drawCubeSide(5);
-
-	mvpMatrix.translate(0.0, 1.0, 0.0);
-	mvpMatrix.rotate(g_angle_box, 0, 0, 1);
-	mvpMatrix.translate(0.0, -1.0, 0.0);
-	
-	gl.uniformMatrix4fv(g_modelMatLoc, false, mvpMatrix.elements);
-	drawCubeSide(4);
-
-	mvpMatrix.translate(1.0, 1.0, 0.0);
-	mvpMatrix.rotate(g_angle_box, 0, 0, 1);
-	mvpMatrix.translate(-1.0, -1.0, 0.0);
-
-	gl.uniformMatrix4fv(g_modelMatLoc, false, mvpMatrix.elements);
-	drawCubeSide(3);
-
-	mvpMatrix.translate(1.0, 0.0, 0.0);
-	mvpMatrix.rotate(g_angle_box, 0, 0, 1);
-	mvpMatrix.translate(-1.0, 0.0, 0.0);
-
-	gl.uniformMatrix4fv(g_modelMatLoc, false, mvpMatrix.elements);
-	drawCubeSide(2);
-
-	mvpMatrix.translate(0.0, 0.0, 1.0);
-	mvpMatrix.rotate(g_angle_box, 1, 0, 0);
-	mvpMatrix.translate(0.0, 0.0, -1.0);
-
-	gl.uniformMatrix4fv(g_modelMatLoc, false, mvpMatrix.elements);
-	drawCubeSide(1);
-	
-	// Restore original mvpMatrix
-	mvpMatrix = popMatrix();
-	gl.uniformMatrix4fv(g_modelMatLoc, false, mvpMatrix.elements);
-}
-//// ------------------------------------------------------------------ ////
-*/
-
 //// ---------- Draw NU Logo ------------------------------------------ ////
 function drawNULogo() {
 	gl.drawArrays(gl.TRIANGLES,
@@ -1721,6 +1682,7 @@ function drawNULogo() {
 }
 //// ----------------------------------------------------------------- ////
 
+/*
 //// ---------- Draw Hollow Cylinder --------------------------------- ////
 function drawHollowCylinder() {
 	gl.drawArrays(gl.TRIANGLE_STRIP,
@@ -1728,7 +1690,7 @@ function drawHollowCylinder() {
 		cylVerts.length/floatsPerVertex);
 }
 //// ---------------------------------------------------------------- ////
-
+*/
 
 
 function drawScene() {

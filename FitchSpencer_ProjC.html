@@ -12,37 +12,56 @@ Email: SpencerFitch2022@u.northwestern.edu
     <title>Project C - Spencer Fitch</title>
   </head>
 	<!--	Create the HTML5 'canvas' element in which we will run WebGL  -->
-  <body onload="main()" onresize="resizeCanvas()" style="background-color:black; color: white; overflow: hidden;">
+  <body onload="main()" onresize="resizeCanvas()" style="background-color:black; color: white; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;">
     <canvas id="webgl" width="1000" height="500">
     Please use a browser that supports "canvas"
 	</canvas>
 	<!--Flexbox container for lower portion of screen-->
 	<div style="display: flex; height: 30vh; overflow:auto;">
 
-		<div id="datacontainer" style="background-color: blue;">
-			<div style="margin: 10px; width: 100%;">
-				<button id=VBO0Active onclick='toggleVBO(0)' style="width: 250px;">Hide Ground Grid</button></br>
-				<button id=VBO1Active onclick='toggleVBO(1)' style="width: 250px;">Switch to Phong Shading</button></br>
-				<button id=SwapLighting onclick='toggleLighting()' style="width: 250px;">Switch to Blinn-Phong Lighting</button>
+		<div id="datacontainer" style=" background-color: #555555; margin-left: 15px; min-width: 250px; border-radius: 15px; overflow: hidden;">
+			<div style="width: 250px;">
+				<div style="font-size: large; background-color: #777777; width: 105%; text-align: center; padding-top: 5px; padding-bottom:5px;">General Controls</div>
+				<a id=VBO0Active class="btn" onclick='toggleVBO(0)'>Hide Ground Grid</a></br>
+				<a id=VBO1Active class="btn" onclick='toggleVBO(1)'>Switch to Phong Shading</a></br>
+				<a id=SwapLighting class="btn" onclick='toggleLighting()'>Switch to Blinn-Phong Lighting</a>
 			</div>
-			<div id= cameraEyePos style="margin-top: 10px;"></div>
-			<div id= cameraRotHz></div> 
-			<div id= cameraRotVt></div>
+			<div class="camStat" style="margin-top: 10px;">
+				<a style="width: 52%; text-align: end;display: inline-block;">Camera Position :</a>
+				<a id=cameraEyePos style="width: 18%;"></a>
+			</div>
+			<div class="camStat">
+				<a style="width: 52%; text-align: end;display: inline-block;">Horizontal Pitch :</a>
+				<a id=cameraRotHz style="width: 18%;"></a>
+			</div>
+			<div class="camStat">
+				<a style="width: 52%; text-align: end; display: inline-block;">Vertical Pitch :</a>
+				<a id=cameraRotVt style="width: 18%;"></a>
+			</div>
 		</div>
-		<div id="lightControls" style="background-color: gray; margin-left: 30px; width: 200px; overflow: hidden; border-radius: 5%;">
-			<div style="width:100%; background-color: green; text-align: center; padding: 5px;" > Light Controls</div>
-			<div style="width:100%; padding-left: 5px; margin-top: 10px;">Location</div>
-			<a>X: </a>
+		<div id="lightControls" style=" background-color: #555555; margin-left: 30px; min-width: 200px; overflow: hidden; border-radius: 15px;">
+			<div style="font-size:large; width:100%; background-color: #777777; text-align: center; padding: 5px;" > Light Controls</div>
+			<div style="width:100%; margin-top: 8px; display: block;">
+				<a id='btnToggleLight' class="btn" onClick='toggleLightONOFF()' style="padding-top: 3px;padding-bottom: 3px;">Turn Light OFF</a>
+			</div>
+			<div style="width:100%; padding-left: 5px; margin-top: 5px;">Location</div>
+			<div style="width:100%; padding-left: 10px;">
+				<a>X: </a>
 				<input id='lightPosX' type='range' min='-5' max='5' value='0.0' class="slider" step="0.1" onkeydown="event.preventDefault()">
-				<a id="LPXlabel" style="width: 10cm;">-5.0</a> </br>
-			<a>Y: </a>
+				<a id="LPXlabel" style="width: 10cm;">-5.0</a>
+			</div>
+			<div style="width: 100%; padding-left: 10px;">
+				<a>Y: </a>
 				<input id='lightPosY' type='range' min='-5' max='5' value='0.0' class="slider" step="0.1" onkeydown="event.preventDefault()"> 
-				<a id="LPYlabel">-5.0</a> </br>
-			<a>Z: </a>
+				<a id="LPYlabel">-5.0</a>
+			</div>
+			<div style="width: 100%; padding-left: 10px;">
+				<a>Z: </a>
 				<input id='lightPosZ' type='range' min='-5' max='5' value='1.0' class="slider" step="0.1" onkeydown="event.preventDefault()">
-				<a id="LPZlabel">-5.0</a> </br>
+				<a id="LPZlabel">-5.0</a>
+			</div>
 			<div id="colorContainer">
-				<div style="padding-left: 5px; margin-top: 10px;">Light Colors</div>
+				<div style="padding-left: 5px; margin-top: 5px;">Light Colors</div>
 				<a style="padding-right: 5px; text-align: end; width: 80px; display: inline-block;">Ambient</a>
 					<input id='lightColrAmbi' type='color' value="#333333"> </br>
 				<a style="padding-right: 5px; text-align: end; width: 80px; display: inline-block;">Diffuse</a>
@@ -53,6 +72,33 @@ Email: SpencerFitch2022@u.northwestern.edu
 		</div>
 		<img src="images/ProjectBInstructions.png" style="height: 100%; padding-left: 20ch;">
 	</div>
+
+	<style>
+		.btn:hover {
+			cursor: pointer;
+			background-color: white;
+		}
+		.btn{
+			background-color: lightgray;
+			margin-left: 2%;
+			color: black;
+			width: 96%;
+			margin-top: 5px;
+			margin-bottom: 5px;
+			border-radius: 15px;
+			display: inline-block;
+			text-align: center;
+			padding-top: 3px;
+			padding-bottom: 3px;
+		}
+		.camStat{
+			padding-top:5px;
+			font-size: medium;
+			padding-left: 2px;
+			width:100%;
+		}
+
+	</style>
 		
 	<!--	Load in the JavaScript libraries supplied by our textbook 
 			(Matsuda et al., 2013 WebGL Programming Guide) that help us
