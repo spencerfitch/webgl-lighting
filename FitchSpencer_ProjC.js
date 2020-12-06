@@ -106,6 +106,10 @@ var lightColr_Ambi = new Float32Array([0.2, 0.2, 0.2]);
 var lightColr_Diff = new Float32Array([0.8, 0.8, 0.8]);
 var lightColr_Spec = new Float32Array([1.0, 1.0, 1.0]);
 
+var cylOpening = true;
+var cylAngle = 0.0;
+var cylAnlge_Rate = 90.0;
+
 function main() {
 //==============================================================================
 
@@ -1827,6 +1831,16 @@ function animate() {
 	// If currently paused, do not update automatic animations
 	if (pauseAnimations) {
 		return;
+	}
+
+	if (cylOpening) {
+		var newCylAngle = cylAngle + (cylAnlge_Rate*elapsed)/1000.0;
+		cylAngle = (newCylAngle <= 360) ? newCylAngle : 360;
+		cylOpening = (newCylAngle <= 360);
+	} else {
+		var newCylAngle = cylAngle - (cylAnlge_Rate*elapsed)/1000.0;
+		cylAngle = (newCylAngle >= -45) ? newCylAngle : -45;
+		cylOpening = (newCylAngle < -45);
 	}
 
 

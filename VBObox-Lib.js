@@ -584,8 +584,9 @@ function VBObox1() {
     makeSphere();
     makeBoxSide();
     makeHollowCylinder();
+    makeCylinderSection();
 
-    var mySiz = (sphVerts.length + boxVerts.length + cylVerts.length);
+    var mySiz = (sphVerts.length + boxVerts.length + cylVerts.length + secVerts.length);
     this.vboVerts = mySiz / floatsPerVertexNorm;
 
     var vboVertices = new Float32Array(mySiz);
@@ -601,6 +602,10 @@ function VBObox1() {
     cylStart = i;
     for(j=0; j<cylVerts.length; i++, j++) {
         vboVertices[i] = cylVerts[j];
+    }
+    secStart = i;
+    for(j=0; j<secVerts.length; i++, j++) {
+        vboVertices[i] = secVerts[j];
     }
 
     this.vboContents = vboVertices;
@@ -922,6 +927,7 @@ VBObox1.prototype.draw = function() {
     //--- End Folding Cube ---//
 
     this.ModelMat = popMatrix();
+    pushMatrix(this.ModelMat);
 
     //--- Draw Rotating Rings ---//
     this.ModelMat.translate(-0.5, -0.5, 0.0);
@@ -939,6 +945,61 @@ VBObox1.prototype.draw = function() {
         this.updateUniforms();
         drawHollowCylinder();
     }
+    //----------------------------//
+
+    this.ModelMat = popMatrix();
+
+    //-- Draw Rolling Cylinder ---//
+    this.ModelMat.translate(-2.0, -2.0, 0.1);
+    this.updateUniforms();
+    drawCylinderSection();
+
+    for (i=0; i<7; i++) {
+        this.ModelMat.translate(0.2, 0.0, 0.0);
+        
+        if (cylAngle < i*45) {
+            this.ModelMat.rotate(-45, 0, 1, 0);
+            this.updateUniforms();
+            drawCylinderSection();
+        } else if (cylAngle > (i+1)*45) {
+            this.updateUniforms();
+            drawCylinderSection();
+        } else {
+            var rotAngle = (i>0) ? (cylAngle % (i*45)) : cylAngle;
+            this.ModelMat.rotate(-45+rotAngle, 0, 1, 0);
+            this.updateUniforms();
+            drawCylinderSection();
+        }
+        
+    }
+
+    
+
+
+    /*
+    this.ModelMat.rotate(-90, 0, 1, 0);
+    this.ModelMat.scale(0.2, 0.2, 0.2);
+    this.ModelMat.translate(1.2, 0.0, 0.0);
+    this.updateUniforms();
+    drawHollowCylinder();
+
+    for (i=0; i<5; i++) {
+        this.ModelMat.translate(0, 0, 0.3);
+        if (i%2==0) {
+            this.ModelMat.scale(0.99, 0.99, 0.99);
+        } else {
+            this.ModelMat.scale(1/0.99, 1/0.99, 1/0.99);
+        }
+        this.ModelMat.rotate(3, 1, 0, 0);
+        this.updateUniforms();
+        drawHollowCylinder();
+    }
+    */
+
+    
+    //----------------------------//
+
+
     
     
 }
@@ -980,11 +1041,11 @@ function makeHollowCylinder() {
 
     var zNorm = (ringWidth + ringHeight) / 2;
 
-	var outerTopColr = new Float32Array([1.0, 0.0, 1.0]);
+	var outerTopColr = new Float32Array([0.0, 1.0, 0.0]);
 	var outerBotColr = new Float32Array([0.0, 1.0, 0.0]);
 
-	var innerTopColr = new Float32Array([0.0, 0.0, 1.0]);
-	var innerBotColr = new Float32Array([1.0, 1.0, 0.0]);
+	var innerTopColr = new Float32Array([1.0, 0.0, 1.0]);
+	var innerBotColr = new Float32Array([1.0, 0.0, 1.0]);
 	
     cylVerts = new Float32Array(floatsPerLoop*locs.length);
 
@@ -1460,6 +1521,150 @@ function drawBoxSide() {
 //// ------------------------------------------------------------------ ////
 
 
+//// ------------ Rolling Cylinder Functions -------------------------- ////
+function makeCylinderSection() {
+    var out = -0.1;
+    var inn =  0.0;
+
+    var hwd = 0.2;
+    var hln = 0.4;
+
+    secVerts = new Float32Array([
+        // Bottom
+         0.0,-hln, out, 1.0,    0.0, 1.0, 1.0,      0.0, 0.0,-1.0,
+         0.0, hln, out, 1.0,    0.0, 1.0, 1.0,      0.0, 0.0,-1.0,
+         hwd,-hln, out, 1.0,    0.0, 1.0, 1.0,      0.0, 0.0,-1.0,
+
+         hwd, hln, out, 1.0,    0.0, 1.0, 1.0,      0.0, 0.0,-1.0,
+         0.0, hln, out, 1.0,    0.0, 1.0, 1.0,      0.0, 0.0,-1.0,
+         hwd,-hln, out, 1.0,    0.0, 1.0, 1.0,      0.0, 0.0,-1.0,
+
+
+        // Side 1
+         0.0,-hln, out, 1.0,    0.0, 1.0, 1.0,     -1.0, 0.0, 0.0, 
+         0.0,-hln, inn, 1.0,    0.0, 1.0, 1.0,     -1.0, 0.0, 0.0,
+         0.0, hln, out, 1.0,    0.0, 1.0, 1.0,     -1.0, 0.0, 0.0,
+
+         0.0, hln, inn, 1.0,    0.0, 1.0, 1.0,     -1.0, 0.0, 0.0,
+         0.0,-hln, inn, 1.0,    0.0, 1.0, 1.0,     -1.0, 0.0, 0.0,
+         0.0, hln, out, 1.0,    0.0, 1.0, 1.0,     -1.0, 0.0, 0.0,
+
+        
+        // Side 2
+         hwd,-hln, out, 1.0,    0.0, 1.0, 1.0,      1.0, 0.0, 0.0, 
+         hwd,-hln, inn, 1.0,    0.0, 1.0, 1.0,      1.0, 0.0, 0.0,
+         hwd, hln, out, 1.0,    0.0, 1.0, 1.0,      1.0, 0.0, 0.0,
+
+         hwd, hln, inn, 1.0,    0.0, 1.0, 1.0,      1.0, 0.0, 0.0,
+         hwd,-hln, inn, 1.0,    0.0, 1.0, 1.0,      1.0, 0.0, 0.0,
+         hwd, hln, out, 1.0,    0.0, 1.0, 1.0,      1.0, 0.0, 0.0,
+
+
+        // Side 3
+         0.0,-hln, out, 1.0,    0.0, 1.0, 1.0,      0.0,-1.0, 0.0,
+         0.0,-hln, inn, 1.0,    0.0, 1.0, 1.0,      0.0,-1.0, 0.0,
+         hwd,-hln, out, 1.0,    0.0, 1.0, 1.0,      0.0,-1.0, 0.0,
+
+         hwd,-hln, inn, 1.0,    0.0, 1.0, 1.0,      0.0,-1.0, 0.0,
+         0.0,-hln, inn, 1.0,    0.0, 1.0, 1.0,      0.0,-1.0, 0.0,
+         hwd,-hln, out, 1.0,    0.0, 1.0, 1.0,      0.0,-1.0, 0.0,
+
+
+        // Side 4
+         0.0, hln, out, 1.0,    0.0, 1.0, 1.0,      0.0, 1.0, 0.0,
+         0.0, hln, inn, 1.0,    0.0, 1.0, 1.0,      0.0, 1.0, 0.0,
+         hwd, hln, out, 1.0,    0.0, 1.0, 1.0,      0.0, 1.0, 0.0,
+
+         hwd, hln, inn, 1.0,    0.0, 1.0, 1.0,      0.0, 1.0, 0.0,
+         0.0, hln, inn, 1.0,    0.0, 1.0, 1.0,      0.0, 1.0, 0.0,
+         hwd, hln, out, 1.0,    0.0, 1.0, 1.0,      0.0, 1.0, 0.0,
+
+
+        // Top
+         0.0,-hln, inn, 1.0,    0.0, 1.0, 1.0,      0.0, 0.0, 1.0,
+         0.0, hln, inn, 1.0,    0.0, 1.0, 1.0,      0.0, 0.0, 1.0,
+         hwd,-hln, inn, 1.0,    0.0, 1.0, 1.0,      0.0, 0.0, 1.0,
+
+         hwd, hln, inn, 1.0,    0.0, 1.0, 1.0,      0.0, 0.0, 1.0,
+         0.0, hln, inn, 1.0,    0.0, 1.0, 1.0,      0.0, 0.0, 1.0,
+         hwd,-hln, inn, 1.0,    0.0, 1.0, 1.0,      0.0, 0.0, 1.0,
+         
+    ])
+}
+
+function drawCylinderSection() {
+    gl.drawArrays(gl.TRIANGLES,
+        secStart/floatsPerVertexNorm,
+        secVerts.length/floatsPerVertexNorm);
+}
+//// ------------------------------------------------------------------ ////
+
+
+//// ------------ Draw 
+function makeRubicksCube() {
+
+    rbkVerts = new Float32Array([
+        // Yellow Bottom
+        -0.5, -0.5, -0.5, 1.0,      0.0, 1.0, 1.0,      -0.2,-0.2,-1.0,
+        -0.5,  0.5, -0.5, 1.0,      0.0, 1.0, 1.0,      -0.2, 0.2,-1.0,
+         0.5, -0.5, -0.5, 1.0,      0.0, 1.0, 1.0,       0.2,-0.2,-1.0,
+
+         0.5,  0.5, -0.5, 1.0,      0.0, 1.0, 1.0,       0.2, 0.2,-1.0,
+        -0.5,  0.5, -0.5, 1.0,      0.0, 1.0, 1.0,      -0.2, 0.2,-1.0,
+         0.5, -0.5, -0.5, 1.0,      0.0, 1.0, 1.0,       0.2,-0.2,-1.0,
+
+        // Red Side
+        -0.5, -0.5, -0.5, 1.0,      0.0, 1.0, 1.0,      -0.2,-1.0,-0.2,
+         0.5, -0.5, -0.5, 1.0,      0.0, 1.0, 1.0,       0.2,-1.0,-0.2,
+        -0.5, -0.5,  0.5, 1.0,      0.0, 1.0, 1.0,      -0.2,-1.0, 0.2,
+
+         0.5, -0.5,  0.5, 1.0,      0.0, 1.0, 1.0,       0.2,-1.0, 0.2,
+         0.5, -0.5, -0.5, 1.0,      0.0, 1.0, 1.0,       0.2,-1.0,-0.2,
+        -0.5, -0.5,  0.5, 1.0,      0.0, 1.0, 1.0,      -0.2,-1.0, 0.2,
+
+        // Blue Side
+         0.5, -0.5, -0.5, 1.0,      0.0, 1.0, 1.0,       1.0,-0.2,-0.2,
+         0.5, -0.5,  0.5, 1.0,      0.0, 1.0, 1.0,       1.0,-0.2, 0.2,
+         0.5,  0.5, -0.5, 1.0,      0.0, 1.0, 1.0,       1.0, 0.2,-0.2,
+
+         0.5,  0.5,  0.5, 1.0,      0.0, 1.0, 1.0,       1.0, 0.2, 0.2,
+         0.5, -0.5,  0.5, 1.0,      0.0, 1.0, 1.0,       1.0,-0.2, 0.2,
+         0.5,  0.5, -0.5, 1.0,      0.0, 1.0, 1.0,       1.0, 0.2,-0.2,
+
+        // Green Side
+        -0.5, -0.5, -0.5, 1.0,      0.0, 1.0, 1.0,      -1.0,-0.2,-0.2,
+        -0.5, -0.5,  0.5, 1.0,      0.0, 1.0, 1.0,      -1.0,-0.2, 0.2,
+        -0.5,  0.5, -0.5, 1.0,      0.0, 1.0, 1.0,      -1.0, 0.2,-0.2,
+
+        -0.5,  0.5,  0.5, 1.0,      0.0, 1.0, 1.0,      -1.0, 0.2, 0.2,
+        -0.5, -0.5,  0.5, 1.0,      0.0, 1.0, 1.0,      -1.0,-0.2, 0.2,
+        -0.5,  0.5, -0.5, 1.0,      0.0, 1.0, 1.0,      -1.0, 0.2,-0.2,
+
+        // Orange Side
+        -0.5,  0.5, -0.5, 1.0,      0.0, 1.0, 1.0,      -0.2, 1.0,-0.2,
+        -0.5,  0.5,  0.5, 1.0,      0.0, 1.0, 1.0,      -0.2, 1.0, 0.2,
+         0.5,  0.5, -0.5, 1.0,      0.0, 1.0, 1.0,       0.2, 1.0,-0.2,
+
+         0.5,  0.5,  0.5, 1.0,      0.0, 1.0, 1.0,       0.2, 1.0, 0.2,
+        -0.5,  0.5,  0.5, 1.0,      0.0, 1.0, 1.0,      -0.2, 1.0, 0.2,
+         0.5,  0.5, -0.5, 1.0,      0.0, 1.0, 1.0,       0.2, 1.0,-0.2,
+
+        // White Top
+        -0.5, -0.5,  0.5, 1.0,      0.0, 1.0, 1.0,      -0.2,-0.2, 1.0,
+        -0.5,  0.5,  0.5, 1.0,      0.0, 1.0, 1.0,      -0.2, 0.2, 1.0,
+         0.5, -0.5,  0.5, 1.0,      0.0, 1.0, 1.0,       0.2,-0.2, 1.0,
+
+         0.5,  0.5,  0.5, 1.0,      0.0, 1.0, 1.0,       0.2, 0.2, 1.0,
+        -0.5,  0.5,  0.5, 1.0,      0.0, 1.0, 1.0,      -0.2, 0.2, 1.0,
+         0.5, -0.5,  0.5, 1.0,      0.0, 1.0, 1.0,       0.2,-0.2, 1.0,
+    ]);
+}
+
+function drawRubicksCube() {
+    gl.drawArrays(gl.TRIANGLES,
+        rbkStart/floatsPerVertexNorm,
+        rbkVerts.length/floatsPerVertexNorm);
+}
 
 
 
