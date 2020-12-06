@@ -409,7 +409,7 @@ function toggleVBO(vboNumber) {
 			break;
 		case 1:
 			GouraudActive = !GouraudActive;
-			document.getElementById('GouraudActive').innerHTML = (GouraudActive) ? 'Switch to Phong Shading' : 'Switch to Gouraud Shading';
+			document.getElementById('SwapShading').innerHTML = (GouraudActive) ? 'Switch to Phong Shading' : 'Switch to Gouraud Shading';
 			break;
 	}
 }

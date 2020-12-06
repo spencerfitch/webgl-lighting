@@ -4,7 +4,7 @@ Name: Spencer Fitch
 Email: SpencerFitch2022@u.northwestern.edu
 */
 
-
+// ==== VBObox0 - General World ========================================== //
 function VBObox0() {
     // VERTEX SHADER
     this.VERT_SRC =
@@ -222,8 +222,7 @@ VBObox0.prototype.switchToMe = function() {
     gl.enableVertexAttribArray(this.a_PosLoc);
     gl.enableVertexAttribArray(this.a_ColrLoc);
 }
-
-    
+   
 VBObox0.prototype.isReady = function() {
     //==============================================================================
     // Returns 'true' if our WebGL rendering context ('gl') is ready to render using
@@ -246,7 +245,6 @@ VBObox0.prototype.isReady = function() {
     return isOK;
 }
     
-
 VBObox0.prototype.adjust = function() {
     //==============================================================================
     // Update the GPU to newer, current values we now store for 'uniform' vars on 
@@ -276,7 +274,6 @@ VBObox0.prototype.adjust = function() {
       // (use gl.vertexAttribPointer() calls and gl.enableVertexAttribArray() calls)
 }
     
-
 VBObox0.prototype.draw = function() {
     //=============================================================================
     // Render current VBObox contents.
@@ -332,7 +329,6 @@ VBObox0.prototype.draw = function() {
     drawGroundGrid();
 }
  
-
 VBObox0.prototype.reload = function() {
     //=============================================================================
     // Over-write current values in the GPU inside our already-created VBO: use 
@@ -346,7 +342,12 @@ VBObox0.prototype.reload = function() {
    
 }
 
-//// ----------- Ground Functions ------------------------------------- ////
+// ======================================================================= //
+
+
+
+
+//// ----------- Ground Functions -------------------- ////
 function makeGroundGrid() {
     //==============================================================================
     // Create a list of vertices that create a large grid of lines in the x,y plane
@@ -403,16 +404,13 @@ function makeGroundGrid() {
         gndVerts[j+6] = yColr[2];			// blu
     }
 }
-
 function drawGroundGrid() {
 	gl.drawArrays(gl.LINES, 
 				  gndStart/floatsPerVertex,
 				  gndVerts.length/floatsPerVertex);
 }
-//// ------------------------------------------------------------------ ////
 
-
-//// ---------- Axis Maker Functions ---------------------------------- ////
+//// ---------- Axis Maker Functions ----------------- ////
 function makeAxisMarker() {
 	axisVerts = new Float32Array([
 		0.00, 0.00, 0.00, 1.0,		1.0, 0.0, 0.0,	// X-axis marker
@@ -423,16 +421,13 @@ function makeAxisMarker() {
 		0.00, 0.00, 1.00, 1.0,		0.0, 0.0, 1.0, 	//	  
 	])
 }
-
 function drawAxisMarker() {
 	gl.drawArrays(gl.LINES,
 				  axisMarkerStart/floatsPerVertex,
 				  axisVerts.length/floatsPerVertex);
 }
-//// ------------------------------------------------------------------ ////
     
-
-//// ---------- Pause Icon Functions ---------------------------------- ////
+//// ---------- Pause Icon Functions ----------------- ////
 function makePauseIcon() {
     pausVerts = new Float32Array([
         0.00, 0.00, 0.00, 1.0,		1.0, 1.0, 1.0, // Node 0	(White)
@@ -448,9 +443,8 @@ function drawPauseIcon() {
                   pauseIconStart/floatsPerVertex,
                   pausVerts.length/floatsPerVertex);
 }
-//// ------------------------------------------------------------------ ////
 
-/// ----------- Light Marker Functions -------------------------------- ////
+/// ----------- Light Marker Functions --------------- ////
 function makeLightMarker() {
     ligtVerts = new Float32Array([
         // Bottom
@@ -513,13 +507,11 @@ function drawLightMarker() {
                   lightMarkerStart/floatsPerVertex,
                   ligtVerts.length/floatsPerVertex);
 }
-//// ------------------------------------------------------------------ ////
 
 
 
 
-// =========== VBObox1 =================================================== //
-
+// ==== VBObox1 - Gouraud Shading ======================================== //
 function VBObox1() {
     // VERTEX SHADER
     this.VERT_SRC =
@@ -669,7 +661,6 @@ function VBObox1() {
     this.u_MvpMatLoc;       // GPU location for uniform
     this.u_NormalMatLoc;
 }
-   
 
 VBObox1.prototype.init = function() {
 
@@ -734,7 +725,6 @@ VBObox1.prototype.init = function() {
     }
 }
    
-
 VBObox1.prototype.switchToMe = function() {
     // a) select our shader program:
     gl.useProgram(this.shaderLoc);	
@@ -774,7 +764,6 @@ VBObox1.prototype.switchToMe = function() {
     gl.enableVertexAttribArray(this.a_NormLoc);
 }
 
-
 VBObox1.prototype.isReady = function() {
     //==============================================================================
     // Returns 'true' if our WebGL rendering context ('gl') is ready to render using
@@ -797,7 +786,6 @@ VBObox1.prototype.isReady = function() {
     return isOK;
 }
     
-
 VBObox1.prototype.adjust = function() {
     //==============================================================================
     // Update the GPU to newer, current values we now store for 'uniform' vars on 
@@ -831,7 +819,6 @@ VBObox1.prototype.adjust = function() {
     */
 }
 
-
 VBObox1.prototype.updateUniforms = function() {
     var MvpMat = new Matrix4();
     MvpMat.set(this.WorldMat);
@@ -860,7 +847,6 @@ VBObox1.prototype.updateUniforms = function() {
     gl.uniform3fv(this.u_LightColrLoc_spec, lightColr_Spec);
 }
     
-
 VBObox1.prototype.draw = function() {
     //=============================================================================
     // Render current VBObox contents.
@@ -975,7 +961,6 @@ VBObox1.prototype.draw = function() {
     
 }
    
-
 VBObox1.prototype.reload = function() {
     //=============================================================================
     // Over-write current values in the GPU inside our already-created VBO: use 
@@ -988,10 +973,12 @@ VBObox1.prototype.reload = function() {
                         this.vboContents);   // the JS source-data array used to fill VBO
    
 }
+// ======================================================================= //
 
 
 
-//// ---------- Hollow Cylinder Functions ----------------------------- ////
+
+//// ----------- Hollow Cylinder Functions ----------- ////
 function makeHollowCylinder() {
 	var locs = new Float32Array([
 		0, Math.PI/12, Math.PI/6, Math.PI/4, Math.PI/3, Math.PI*5/12, 
@@ -1337,17 +1324,13 @@ function makeHollowCylinder() {
 	}
 
 }
-
 function drawHollowCylinder() {
 	gl.drawArrays(gl.TRIANGLES,
 		cylStart/floatsPerVertexNorm,
 		cylVerts.length/floatsPerVertexNorm);
 }
-//// ------------------------------------------------------------------ ////
 
-
-
-//// ----------- Sphere Functions ------------------------------------- ////
+//// ----------- Sphere Functions -------------------- ////
 function makeSphere() {
     // Make a sphere from one OpenGL TRIANGLE_STRIP primitive.  
     var slices = 13;		    // # of slices of the sphere along the z axis. >=3 req'd
@@ -1413,16 +1396,13 @@ function makeSphere() {
         }
     }
 }
-
 function drawSphere() {
     gl.drawArrays(gl.TRIANGLE_STRIP,
         sphStart/floatsPerVertexNorm,
         sphVerts.length/floatsPerVertexNorm);
 }
-//// ------------------------------------------------------------------ ////
 
-
-//// ------------ Box Side Functions ---------------------------------- ////
+//// ----------- Box Side Functions ------------------ ////
 function makeBoxSide() {
     var sq2 = Math.sqrt(2);
 
@@ -1483,16 +1463,13 @@ function makeBoxSide() {
 	    0.00, 0.50, 0.00, 1.0,		0.0, 0.0, 1.0,     -sq2, 0.0, sq2,  // Node 15	(Blue)
     ]);
 }
-
 function drawBoxSide() {
     gl.drawArrays(gl.TRIANGLES,
         boxStart/floatsPerVertexNorm,
         boxVerts.length/floatsPerVertexNorm);
 }
-//// ------------------------------------------------------------------ ////
 
-
-//// ------------ Rolling Cylinder Functions -------------------------- ////
+//// ----------- Rolling Cylinder Functions ---------- ////
 function makeCylinderSection() {
     var out = -0.1;
     var inn =  0.0;
@@ -1562,21 +1539,16 @@ function makeCylinderSection() {
          
     ])
 }
-
 function drawCylinderSection() {
     gl.drawArrays(gl.TRIANGLES,
         secStart/floatsPerVertexNorm,
         secVerts.length/floatsPerVertexNorm);
 }
-//// ------------------------------------------------------------------ ////
 
 
 
 
-
-
-
-//// --------------- PHONG ------------------------------------------- ////
+// ==== VBObox2 - Phong Shading ========================================== //
 function VBObox2() {
     // VERTEX SHADER
     this.VERT_SRC =
@@ -1762,7 +1734,6 @@ function VBObox2() {
     this.matl0 = new Material(matlSel);
 }
    
-
 VBObox2.prototype.init = function() {
 
     // a) Compile,link,upload shaders-----------------------------------------------
@@ -1841,8 +1812,7 @@ VBObox2.prototype.init = function() {
         return -1;
     }
 
-}
-   
+} 
 
 VBObox2.prototype.switchToMe = function() {
     // a) select our shader program:
@@ -1882,7 +1852,6 @@ VBObox2.prototype.switchToMe = function() {
 
 }
 
-
 VBObox2.prototype.isReady = function() {
     //==============================================================================
     // Returns 'true' if our WebGL rendering context ('gl') is ready to render using
@@ -1905,7 +1874,6 @@ VBObox2.prototype.isReady = function() {
     return isOK;
 }
     
-
 VBObox2.prototype.adjust = function() {
     //==============================================================================
     // Update the GPU to newer, current values we now store for 'uniform' vars on 
@@ -1924,7 +1892,6 @@ VBObox2.prototype.adjust = function() {
     this.updateUniforms();
 
 }
-
 
 VBObox2.prototype.updateUniforms = function() {
     // Update view uniform
@@ -1966,7 +1933,6 @@ VBObox2.prototype.updateUniforms = function() {
     gl.uniformMatrix4fv(this.u_NormalMatLoc, false, this.NormalMat.elements);
 }
     
-
 VBObox2.prototype.draw = function() {
     //=============================================================================
     // Render current VBObox contents.
@@ -2080,7 +2046,6 @@ VBObox2.prototype.draw = function() {
     
 }
    
-
 VBObox2.prototype.reload = function() {
     //=============================================================================
     // Over-write current values in the GPU inside our already-created VBO: use 
@@ -2093,3 +2058,4 @@ VBObox2.prototype.reload = function() {
                         this.vboContents);   // the JS source-data array used to fill VBO
    
 }
+// ======================================================================= //
