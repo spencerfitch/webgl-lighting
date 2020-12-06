@@ -871,7 +871,7 @@ VBObox1.prototype.draw = function() {
     pushMatrix(this.ModelMat);
 
     // Draw sphere
-    this.ModelMat.translate(1, 1, 0.5);
+    this.ModelMat.translate(-1, 1, 0.5);
     this.ModelMat.scale(0.5, 0.5, 0.5);
     this.ModelMat.rotate(g_angle_gyro, 0, 0, 1);
     this.updateUniforms();
@@ -880,20 +880,13 @@ VBObox1.prototype.draw = function() {
     this.ModelMat = popMatrix();
     pushMatrix(this.ModelMat);
 
-
-    // Draw second sphere
-    this.ModelMat.translate(-1, 0, 0.5);
-    this.ModelMat.scale(0.5, 0.5, 0.5);
-    this.ModelMat.rotate(g_angle_gyro, 0, 0, 1);
-    this.updateUniforms();
-    drawSphere();
 
     this.ModelMat = popMatrix();
     pushMatrix(this.ModelMat);
 
     //--- Draw Folding Cube ---//
-    this.ModelMat.translate( -0.5, -0.5, 0.0);
-    this.ModelMat.translate( 1.0, -1.0, 0.0);
+    this.ModelMat.translate(0.9, 1.5, 0.0);
+    this.ModelMat.rotate(180, 0, 0, 1);
     this.ModelMat.scale(0.5, 0.5, 0.5);
     this.updateUniforms();
     drawBoxSide();
@@ -930,8 +923,8 @@ VBObox1.prototype.draw = function() {
     pushMatrix(this.ModelMat);
 
     //--- Draw Rotating Rings ---//
-    this.ModelMat.translate(-0.5, -0.5, 0.0);
-    this.ModelMat.scale(0.2, 0.2, 0.2);
+    this.ModelMat.translate(-1.8, -1.5, 0.0);
+    this.ModelMat.scale(0.3, 0.3, 0.3);
     this.ModelMat.rotate(90, 0, 1, 0);
     this.ModelMat.translate(-1.2, 0.0, 0.0);
     this.ModelMat.rotate(3*g_angle_gyro, 1, 0, 0);
@@ -949,8 +942,8 @@ VBObox1.prototype.draw = function() {
 
     this.ModelMat = popMatrix();
 
-    //-- Draw Rolling Cylinder ---//
-    this.ModelMat.translate(-2.0, -2.0, 0.1);
+    //--- Draw Rolling Cylinder --//
+    this.ModelMat.translate(0.8, -1.5, 0.1);
     this.updateUniforms();
     drawCylinderSection();
 
@@ -971,32 +964,7 @@ VBObox1.prototype.draw = function() {
             drawCylinderSection();
         }
         
-    }
-
-    
-
-
-    /*
-    this.ModelMat.rotate(-90, 0, 1, 0);
-    this.ModelMat.scale(0.2, 0.2, 0.2);
-    this.ModelMat.translate(1.2, 0.0, 0.0);
-    this.updateUniforms();
-    drawHollowCylinder();
-
-    for (i=0; i<5; i++) {
-        this.ModelMat.translate(0, 0, 0.3);
-        if (i%2==0) {
-            this.ModelMat.scale(0.99, 0.99, 0.99);
-        } else {
-            this.ModelMat.scale(1/0.99, 1/0.99, 1/0.99);
-        }
-        this.ModelMat.rotate(3, 1, 0, 0);
-        this.updateUniforms();
-        drawHollowCylinder();
-    }
-    */
-
-    
+    }    
     //----------------------------//
 
 
@@ -1665,6 +1633,7 @@ function drawRubicksCube() {
         rbkStart/floatsPerVertexNorm,
         rbkVerts.length/floatsPerVertexNorm);
 }
+//// ---------------------- ////
 
 
 
@@ -1768,8 +1737,9 @@ function VBObox2() {
     makeSphere();
     makeBoxSide();
     makeHollowCylinder();
+    makeCylinderSection();
 
-    var mySiz = (sphVerts.length + boxVerts.length + cylVerts.length);
+    var mySiz = (sphVerts.length + boxVerts.length + cylVerts.length + secVerts.length);
     this.vboVerts = mySiz / floatsPerVertexNorm;
 
     var vboVertices = new Float32Array(mySiz);
@@ -1785,6 +1755,10 @@ function VBObox2() {
     cylStart = i;
     for(j=0; j<cylVerts.length; i++, j++) {
         vboVertices[i] = cylVerts[j];
+    }
+    secStart = i;
+    for(j=0; j<secVerts.length; i++, j++) {
+        vboVertices[i] = secVerts[j];
     }
 
     this.vboContents = vboVertices;
@@ -2074,19 +2048,7 @@ VBObox2.prototype.draw = function() {
     this.matl0.setMatl(MATL_RED_PLASTIC);
 
     // Draw sphere
-    this.ModelMat.translate(1, 1, 0.5);
-    this.ModelMat.scale(0.5, 0.5, 0.5);
-    this.ModelMat.rotate(g_angle_gyro, 0, 0, 1);
-    this.updateUniforms();
-    drawSphere();
-
-    this.ModelMat = popMatrix();
-    pushMatrix(this.ModelMat);
-
-    this.matl0.setMatl(MATL_CHROME)
-
-    // Draw second sphere
-    this.ModelMat.translate(-1, 0, 0.5);
+    this.ModelMat.translate(-1, 1, 0.5);
     this.ModelMat.scale(0.5, 0.5, 0.5);
     this.ModelMat.rotate(g_angle_gyro, 0, 0, 1);
     this.updateUniforms();
@@ -2098,8 +2060,8 @@ VBObox2.prototype.draw = function() {
     this.matl0.setMatl(MATL_EMERALD)
 
     //--- Draw Folding Cube ---//
-    this.ModelMat.translate( -0.5, -0.5, 0.0);
-    this.ModelMat.translate( 1.0, -1.0, 0.0);
+    this.ModelMat.translate(0.9, 1.5, 0.0);
+    this.ModelMat.rotate(180, 0, 0, 1);
     this.ModelMat.scale(0.5, 0.5, 0.5);
     this.updateUniforms();
     drawBoxSide();
@@ -2133,12 +2095,13 @@ VBObox2.prototype.draw = function() {
     //--- End Folding Cube ---//
 
     this.ModelMat = popMatrix();
+    pushMatrix(this.ModelMat);
 
-    this.matl0.setMatl(MATL_RED_PLASTIC)
+    this.matl0.setMatl(MATL_BLU_PLASTIC);
 
     //--- Draw Rotating Rings ---//
-    this.ModelMat.translate(-0.5, -0.5, 0.0);
-    this.ModelMat.scale(0.2, 0.2, 0.2);
+    this.ModelMat.translate(-1.8, -1.5, 0.0);
+    this.ModelMat.scale(0.3, 0.3, 0.3);
     this.ModelMat.rotate(90, 0, 1, 0);
     this.ModelMat.translate(-1.2, 0.0, 0.0);
     this.ModelMat.rotate(3*g_angle_gyro, 1, 0, 0);
@@ -2153,26 +2116,32 @@ VBObox2.prototype.draw = function() {
         drawHollowCylinder();
     }
 
-    /*
-    this.MvpMat = popMatrix();
+    this.ModelMat = popMatrix();
+    this.matl0.setMatl(MATL_PEARL);
 
-    // Draw rotating rings
-    this.MvpMat.translate(-0.5, 0.5, 0.0)
-    this.MvpMat.scale(0.2, 0.2, 0.2);             // Shrink model
-    this.MvpMat.rotate(90, 0, 1, 0);              // Rotate Upright
-    this.MvpMat.translate(-1.2, 0.0, 0.0);        // Move out of ground
-    this.MvpMat.rotate(g_angle_gyro, 1, 0, 0);    // Spin around center
+    //--- Draw Rolling Cylinder --//
+    this.ModelMat.translate(0.8, -1.5, 0.1);
     this.updateUniforms();
-    drawHollowCylinder();
-    
-    var scale = 1.0/1.2;
-    for(i=0; i<5; i++) {
-        this.MvpMat.rotate(g_angle_gyro, 1-i%2, i%2, 0);
-        this.MvpMat.scale(scale, scale, scale);
-        this.updateUniforms();
-        drawHollowCylinder();
-    }
-    */
+    drawCylinderSection();
+
+    for (i=0; i<7; i++) {
+        this.ModelMat.translate(0.2, 0.0, 0.0);
+        
+        if (cylAngle < i*45) {
+            this.ModelMat.rotate(-45, 0, 1, 0);
+            this.updateUniforms();
+            drawCylinderSection();
+        } else if (cylAngle > (i+1)*45) {
+            this.updateUniforms();
+            drawCylinderSection();
+        } else {
+            var rotAngle = (i>0) ? (cylAngle % (i*45)) : cylAngle;
+            this.ModelMat.rotate(-45+rotAngle, 0, 1, 0);
+            this.updateUniforms();
+            drawCylinderSection();
+        }
+    }    
+    //----------------------------//
     
 }
    
