@@ -1,0 +1,161 @@
+<!-- 
+Comp_Sci 351-1 : Project C
+Name: Spencer Fitch
+Email: SpencerFitch2022@u.northwestern.edu
+-->
+
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+	<meta charset="utf-8" />
+    <title>Project C - Spencer Fitch</title>
+  </head>
+	<!--	Create the HTML5 'canvas' element in which we will run WebGL  -->
+  <body onload="main()" onresize="resizeCanvas()" style="background-color:black; color: white; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;">
+    <canvas id="webgl" width="1000" height="500">
+    Please use a browser that supports "canvas"
+	</canvas>
+	<!--Flexbox container for lower portion of screen-->
+	<div style="display: flex; height: 30vh; overflow:auto;">
+
+		<div id="datacontainer" style=" background-color: #555555; margin-left: auto; min-width: fit-content; border-radius: 15px; overflow: hidden;">
+			<div style="width: 250px;">
+				<div style="font-size: large; background-color: #777777; width: 105%; text-align: center; padding-top: 5px; padding-bottom:5px; font-weight: bold;">General Controls</div>
+				<a id=VBO0Active class="btn" onclick='toggleVBO(0)'>Hide Ground Grid</a></br>
+				<a id=SwapShading class="btn" onclick='toggleVBO(1)'>Switch to Phong Shading</a></br>
+				<a id=SwapLighting class="btn" onclick='toggleLighting()'>Switch to Blinn-Phong Lighting</a>
+			</div>
+			<div style="width: 100%; align-content: center; margin-top: 5px;">
+				<div style="width: 100%;text-align: center; font-weight: 500;">Sphere Material: </div> 
+				<select style="font-size: medium; display: block; margin: 0 auto; padding: 2px 15px; border-radius: 15px; background-color: lightgray;" id="matlSelect" onkeydown="event.preventDefault()">
+					<option value=1 selected>Red Plastic</option>
+					<option value=2>Green Plastic</option>
+					<option value=3>Blue Plastic</option>
+					<option value=4>Black Plastic</option>
+					<option value=5>Black Rubber</option>
+					<option value=10>Copper (Dull)</option>
+					<option value=11>Copper (Shiny)</option>
+					<option value=7>Bronze (Dull)</option>
+					<option value=8>Bronze (Shiny)</option>
+					<option value=15>Silver (Dull)</option>
+					<option value=16>Silver (Shiny)</option>
+					<option value=12>Gold (Dull)</option>
+					<option value=13>Gold (Shiny)</option>
+					<option value=6>Brass</option>
+					<option value=9>Chrome</option>
+					<option value=14>Pewter</option>
+					<option value=17>Emerald</option>
+					<option value=18>Jade</option>
+					<option value=19>Obsidian</option>
+					<option value=20>Pearl</option>
+					<option value=21>Ruby</option>
+					<option value=22>Turquoise</option>
+				</select>
+			</div>
+			<!--
+			<div class="camStat" style="margin-top: 10px;">
+				<a style="width: 52%; text-align: end;display: inline-block;">Camera Position :</a>
+				<a id=cameraEyePos style="width: 18%;"></a>
+			</div>
+			<div class="camStat">
+				<a style="width: 52%; text-align: end;display: inline-block;">Horizontal Pitch :</a>
+				<a id=cameraRotHz style="width: 18%;"></a>
+			</div>
+			<div class="camStat">
+				<a style="width: 52%; text-align: end; display: inline-block;">Vertical Pitch :</a>
+				<a id=cameraRotVt style="width: 18%;"></a>
+			</div>
+		-->
+		</div>
+		<div id="lightControls" style=" background-color: #555555; margin-left: 15px; width: 400px; min-width: fit-content; overflow: hidden; border-radius: 15px;">
+			<div style="font-size:large; width:100%; background-color: #777777; text-align: center; padding: 5px; font-weight: bold;" > Light Controls</div>
+			<div style="width:100%; margin-top: 8px; display: block;">
+				<a id='btnToggleLight' class="btn" onClick='toggleLightONOFF()' style="padding-top: 3px;padding-bottom: 3px;">Turn Light OFF</a>
+			</div>
+			<div sytle="width: 100%;">
+				<div id=locationContainer style="width: 55%; float: left;">
+					<div style="width:100%; padding-left: 5px; margin-top: 5px; font-weight: 500;">Location</div>
+					<div style="width:100%; padding-left: 10px; padding-top: 5px;">
+						<a>X: </a>
+						<input id='lightPosX' type='range' min='-5' max='5' value='0.0' class="slider" step="0.1" onkeydown="event.preventDefault()">
+						<a id="LPXlabel" style="width: 10cm;">-5.0</a>
+					</div>
+					<div style="width: 100%; padding-left: 10px;padding-top: 5px;">
+						<a>Y: </a>
+						<input id='lightPosY' type='range' min='-5' max='5' value='0.0' class="slider" step="0.1" onkeydown="event.preventDefault()"> 
+						<a id="LPYlabel">-5.0</a>
+					</div>
+					<div style="width: 100%; padding-left: 10px;padding-top: 5px;">
+						<a>Z: </a>
+						<input id='lightPosZ' type='range' min='-5' max='5' value='1.0' class="slider" step="0.1" onkeydown="event.preventDefault()">
+						<a id="LPZlabel">-5.0</a>
+					</div>
+				</div>
+				<div id=colorContainer style="width: 45%; float: right;">
+					<div style="padding-left: 5px; margin-top: 5px; font-weight: 500;">Light Colors</div>
+					<a style="padding-right: 5px; text-align: end; width: 80px; display: inline-block;">Ambient</a>
+						<input id='lightColrAmbi' type='color' value="#333333" style="background-color: lightgray;"> </br>
+					<a style="padding-right: 5px; text-align: end; width: 80px; display: inline-block;">Diffuse</a>
+						<input id='lightColrDiff' type='color' value='#cccccc' style="background-color: lightgray;"> </br>
+					<a style="padding-right: 5px; text-align: end; width: 80px; display: inline-block;">Specular</a>
+						<input id='lightColrSpec' type='color' value='#ffffff' style="background-color: lightgray;"> </br>
+				</div>
+			</div>
+		</div>
+		<div  style="height: 100%; background-color: #555555; margin-left: 15px; margin-right: auto; overflow: hidden; border-radius: 15px; min-width: fit-content;">
+			<div style="font-size:large; width:100%; background-color: #777777; text-align: center; padding: 5px; font-weight: bold;" > Camera Controls</div>
+			<img src="images/ProjectCInstructions.png" style="height: 80%; margin-top: 1%">
+		</div>
+		<!--
+		<div style="height: 100%; background-color: #555555; margin-left: 15px; margin-right: 15px; overflow: hidden; border-radius: 15px; min-width: fit-content;">
+			<div style="font-size:large; width:100%; background-color: #777777; text-align: center; padding: 5px; font-weight: bold;" > Animation Controls</div>
+			<img src="images/ProjectCPause.png" style="width: 200px; margin-top: 15%">
+		</div>
+		-->
+	</div>
+
+	<style>
+		.btn:hover {
+			cursor: pointer;
+			background-color: white;
+		}
+		.btn{
+			background-color: lightgray;
+			margin-left: 2%;
+			color: black;
+			width: 96%;
+			margin-top: 5px;
+			margin-bottom: 5px;
+			border-radius: 15px;
+			display: inline-block;
+			text-align: center;
+			padding-top: 3px;
+			padding-bottom: 3px;
+			font-weight: 500;
+		}
+		.camStat{
+			padding-top:5px;
+			font-size: medium;
+			padding-left: 2px;
+			width:100%;
+		}
+
+	</style>
+		
+	<!--	Load in the JavaScript libraries supplied by our textbook 
+			(Matsuda et al., 2013 WebGL Programming Guide) that help us
+			with WebGL programming:
+	-->
+    <script src="lib/webgl-utils.js"></script>
+    <script src="lib/webgl-debug.js"></script>
+    <script src="lib/cuon-utils.js"></script>
+    <script src="lib/cuon-matrix-quat03.js"></script>
+	<!--	Finally, load in our own JavaScript program file.
+	-->
+	<script src="lights-SF.js"></script>
+	<script src="materials_Ayerdi.js"></script>
+	<script src="FitchSpencer_ProjC_VBObox_lib.js"></script>
+	<script src="FitchSpencer_ProjC.js"></script>
+  </body>
+</html>
