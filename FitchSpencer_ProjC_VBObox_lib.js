@@ -1,5 +1,6 @@
 /*
 Comp_Sci 351-1 : Project C
+VBObox_lib
 Name: Spencer Fitch
 Email: SpencerFitch2022@u.northwestern.edu
 */
@@ -1946,7 +1947,7 @@ VBObox2.prototype.draw = function() {
     
     pushMatrix(this.ModelMat);
 
-    this.matl0.setMatl(MATL_RED_PLASTIC);
+    this.matl0.setMatl(sphereMatl);
 
     // Draw sphere
     this.ModelMat.translate(-1, 1, 0.5);

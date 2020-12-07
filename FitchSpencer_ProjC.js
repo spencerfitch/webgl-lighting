@@ -4,6 +4,14 @@ Name: Spencer Fitch
 Email: SpencerFitch2022@u.northwestern.edu
 */
 
+/*
+// TODO
+	- Set up material switching on the sphere
+		- Use DDL of materials to select
+	- Clean up HTML (css file?)
+
+*/
+
 
 // Global Variables
 //------------For WebGL-----------------------------------------------
@@ -75,6 +83,7 @@ var lightOn = true;
 
 var lightingMode = 1.0;		// 1.0 = Phong Lighting
 							// 0.0 = Blinn-Phong lighting
+var sphereMatl = 1.0;
 
 var lightPosX = 0.0;
 var lightPosY = 0.0;
@@ -299,6 +308,9 @@ function tick() {
 	document.getElementById('LPYlabel').innerHTML = Number(lightPosY).toFixed(1);
 	document.getElementById('LPZlabel').innerHTML = Number(lightPosZ).toFixed(1);
 
+	// Update Sphere material
+	sphereMatl = parseInt(document.getElementById('matlSelect').value);
+
 	animate();		// Update the rotation angle
 	if (lightOn) {
 		updateLightColors();
@@ -307,13 +319,14 @@ function tick() {
 	
 
 	// Display information about camera location
+	/*
 	document.getElementById('cameraEyePos').innerHTML=
 		'(' + e_x.toFixed(1) + ', ' + e_y.toFixed(1) + ', ' + e_z.toFixed(1) + ')';
 	document.getElementById('cameraRotHz').innerHTML= 
 		(theta_H*180.0/Math.PI).toFixed(1)+'°';
 	document.getElementById('cameraRotVt').innerHTML=
 		(theta_V*180.0/Math.PI).toFixed(1)+'°';
-
+	*/
 
 
 	//--------------------------------
