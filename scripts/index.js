@@ -76,7 +76,7 @@ var phongBox = new VBObox2();	// Holds scene with Phong shading
 
 
 // ------------For Lighting/Shading ----------------------------------
-var VBO0Active = true;
+var showGroundGrid = true;
 var GouraudActive = true;
 
 var lightOn = true;
@@ -108,12 +108,15 @@ function main() {
 	  
 	// Add keyboard event listeners
 	window.addEventListener("keydown", myKeyDown, false);
-	window.addEventListener("keyup", myKeyUp, false);	
+	window.addEventListener("keyup", myKeyUp, false);
+	
+	// Add onClick handlers
 
 	gl.enable(gl.DEPTH_TEST); 
 
 	// Resize canvas
 	resizeCanvas();
+	document.querySelector('body').setAttribute('onresize', 'resizeCanvas()')
 
 	// Init VBO 
 	worldBox.init(gl);
@@ -125,6 +128,24 @@ function main() {
 
 	// Specify the color for clearing <canvas>
 	gl.clearColor(0.25, 0.2, 0.25, 1.0);
+
+	// Initialize light input controls
+	const initLightPosition = [lightPosX, lightPosY, lightPosZ];
+	document.querySelectorAll('.light_position').forEach((input, idx) => {
+		input.setAttribute('type', 'range');
+		input.setAttribute('class', 'slider');
+		input.setAttribute('min', '-5');
+		input.setAttribute('max', '5');
+		input.setAttribute('step', '0.1');
+		input.setAttribute('value', String(initLightPosition[idx]));
+		input.setAttribute('onkeydown', "event.preventDefault()");
+	})
+
+	const initLightColor = ['#333333', '#cccccc', '#ffffff']
+	document.querySelectorAll('.light_color').forEach((input, idx) => {
+		input.setAttribute('type', 'color');
+		input.setAttribute('value', initLightColor[idx])
+	})
 
 	tick();
 }
@@ -140,25 +161,19 @@ function resizeCanvas() {
 }
 
 function updateLightColors() {
-	let ambiString = document.getElementById('lightColrAmbi').value;
-	let diffString = document.getElementById('lightColrDiff').value;
-	let specString = document.getElementById('lightColrSpec').value;
+	const splitColor = (colorString) => (
+		[1,3,5].map(idx => (
+			parseInt(Number('0x'+colorString.slice(idx, idx+2))) / 255
+		))
+	)
 
-	let ambiR = parseInt(Number('0x'+ambiString.slice(1,3))) / 255;
-	let ambiG = parseInt(Number('0x'+ambiString.slice(3,5))) / 255;
-	let ambiB = parseInt(Number('0x'+ambiString.slice(5,7))) / 255;
+	let ambiString = document.getElementById('light_color_ambi').value;
+	let diffString = document.getElementById('light_color_diff').value;
+	let specString = document.getElementById('light_color_spec').value;
 
-	let diffR = parseInt(Number('0x'+diffString.slice(1,3))) / 255;
-	let diffG = parseInt(Number('0x'+diffString.slice(3,5))) / 255;
-	let diffB = parseInt(Number('0x'+diffString.slice(5,7))) / 255;
-	
-	let specR = parseInt(Number('0x'+specString.slice(1,3))) / 255;
-	let specG = parseInt(Number('0x'+specString.slice(3,5))) / 255;
-	let specB = parseInt(Number('0x'+specString.slice(5,7))) / 255;
-
-	lightColr_Ambi.set([ambiR, ambiG, ambiB]);
-	lightColr_Diff.set([diffR, diffG, diffB]);
-	lightColr_Spec.set([specR, specG, specB]);
+	lightColr_Ambi.set(splitColor(ambiString));
+	lightColr_Diff.set(splitColor(diffString));
+	lightColr_Spec.set(splitColor(specString));
 }
 
 function toggleLightONOFF() {
@@ -304,9 +319,9 @@ function tick() {
 	lightPosY = document.getElementById('lightPosY').value;
 	lightPosZ = document.getElementById('lightPosZ').value;
 
-	document.getElementById('LPXlabel').innerHTML = Number(lightPosX).toFixed(1);
-	document.getElementById('LPYlabel').innerHTML = Number(lightPosY).toFixed(1);
-	document.getElementById('LPZlabel').innerHTML = Number(lightPosZ).toFixed(1);
+	document.getElementById('lightPosXDisplay').innerHTML = Number(lightPosX).toFixed(1);
+	document.getElementById('lightPosYDisplay').innerHTML = Number(lightPosY).toFixed(1);
+	document.getElementById('lightPosZDisplay').innerHTML = Number(lightPosZ).toFixed(1);
 
 	// Update Sphere material
 	sphereMatl = parseInt(document.getElementById('matlSelect').value);
@@ -341,7 +356,7 @@ function drawAll() {
 	setCamera();
 	animate();
 
-	if (VBO0Active) {
+	if (showGroundGrid) {
 		// Draw ground plane and axis marker
 		worldBox.switchToMe();
 		worldBox.adjust();
@@ -417,12 +432,12 @@ function animate() {
 function toggleVBO(vboNumber) {
 	switch(vboNumber) {
 		case 0:
-			VBO0Active = !VBO0Active;
-			document.getElementById('VBO0Active').innerHTML = (VBO0Active) ? 'Hide Ground Grid' : 'Show Ground Grid';
+			showGroundGrid = !showGroundGrid;
+			document.getElementById('btn_toggle_ground_grid').innerHTML = (showGroundGrid) ? 'Hide Ground Grid' : 'Show Ground Grid';
 			break;
 		case 1:
 			GouraudActive = !GouraudActive;
-			document.getElementById('SwapShading').innerHTML = (GouraudActive) ? 'Switch to Phong Shading' : 'Switch to Gouraud Shading';
+			document.getElementById('btn_toggle_shading').innerHTML = (GouraudActive) ? 'Switch to Phong Shading' : 'Switch to Gouraud Shading';
 			break;
 	}
 }
@@ -430,11 +445,11 @@ function toggleVBO(vboNumber) {
 function toggleLighting() {
 	if (lightingMode == 1.0) {
 		lightingMode = 0.0;
-		document.getElementById('SwapLighting').innerHTML = 'Switch to Phong Lighting';
+		document.getElementById('btn_toggle_lighting').innerHTML = 'Switch to Phong Lighting';
 
 	} else {
 		lightingMode = 1.0;
-		document.getElementById('SwapLighting').innerHTML = 'Switch to Blinn-Phong Lighting';
+		document.getElementById('btn_toggle_lighting').innerHTML = 'Switch to Blinn-Phong Lighting';
 	}
 }
 
