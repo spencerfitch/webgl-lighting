@@ -6,7 +6,7 @@
 		<title>WebGL Lighting and Shading</title>
 		<link rel="stylesheet" href="styles/index.css">
 		<link rel="icon" type="image/x-icon" href="favicon.ico">
-		<link rel="manifest" href="./manifest.json">
+		<link rel="manifest" href="manifest.json">
 
 		<!-- Provided WebGL libraries -->
 		<script src="scripts/lib/webgl-utils.js"></script>
@@ -19,10 +19,10 @@
 		<!-- Custom script linked at end of body -->
   	</head>
 
-  	<body onload="main()">
+  	<body>
 
     	<canvas id="webgl" width="1000" height="500">
-			Please use a browser that supports HTML5 "canvas"
+			Please use a browser that supports HTML5 canvas
 		</canvas>
 
 		<div id="controls">
@@ -32,15 +32,15 @@
 					General Controls
 				</div>
 				<div style="width: 250px">
-					<a id="btn_toggle_ground_grid" class="btn_toggle" onclick='toggleVBO(0)'>
+					<a id="btn_toggle_ground_grid" class="btn_toggle">
 						Hide Ground Grid
 					</a>
 					</br>
-					<a id="btn_toggle_shading" class="btn_toggle" onclick='toggleVBO(1)'>
+					<a id="btn_toggle_shading" class="btn_toggle">
 						Switch to Phong Shading
 					</a>
 					</br>
-					<a id="btn_toggle_lighting" class="btn_toggle" onclick='toggleLighting()'>
+					<a id="btn_toggle_lighting_mode" class="btn_toggle">
 						Switch to Blinn-Phong Lighting
 					</a>
 				</div>
@@ -79,7 +79,7 @@
 				<div class="control_title">
 					Light Controls
 				</div>
-				<a id='btnToggleLight' class="btn_toggle" onClick='toggleLightONOFF()'>
+				<a id='btn_toggle_light' class="btn_toggle">
 					Turn Light OFF
 				</a>
 				<div sytle="width: 100%;">
@@ -89,21 +89,21 @@
 						</div>
 
 						<div class="light_position_input_container">
-							<label for="lightPosX">X: </label>
-							<input id='lightPosX' name="lightPosX" class="light_position">
-							<span id="lightPosXDisplay">0.0</span>
+							<label for="light_position_x">X: </label>
+							<input id='light_position_x' name="light_position_x" class="light_position">
+							<span id="light_position_x_display">0.0</span>
 						</div>
 
 						<div class="light_position_input_container">
-							<label for="lightPosX">Y: </label>
-							<input id='lightPosY' name="lightPosY" class="light_position"> 
-							<span id="lightPosYDisplay">0.0</span>
+							<label for="light_position_x">Y: </label>
+							<input id='light_position_y' name="light_position_y" class="light_position"> 
+							<span id="light_position_y_display">0.0</span>
 						</div>
 
 						<div class="light_position_input_container">
-							<label for="lightPosZ">Z: </a>
-							<input id='lightPosZ' name="lightPosZ" class="light_position">
-							<span id="lightPosZDisplay">0.0</span>
+							<label for="light_position_z">Z: </label>
+							<input id='light_position_z' name="light_position_z" class="light_position">
+							<span id="light_position_z_display">0.0</span>
 						</div>
 					</div>
 
@@ -130,12 +130,11 @@
 				<div class="control_title">
 					Camera Controls
 				</div>
-				<img src="images/ProjectCInstructions.png" style="height: 80%; margin-top: 1%">
+				<img src="images/ProjectCInstructions.png" alt="Camera keyboard controls" style="height: 80%; margin-top: 1%">
 			</div>
 
 		</div>
 
-		<!-- Custom code for specific scene and controls -->
 		<script src="scripts/VBObox_lib.js"></script>
 		<script src="scripts/index.js"></script>
   </body>

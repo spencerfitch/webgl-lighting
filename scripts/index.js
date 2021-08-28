@@ -1,122 +1,101 @@
-/*
-Comp_Sci 351-1 : Project C
-Name: Spencer Fitch
-Email: SpencerFitch2022@u.northwestern.edu
-*/
+/**
+ * @file Contains script for rendering WebGL canvas and managing user controls in index.html
+ * @author Spencer Fitch <spencer@spencerfitch.com>
+ */
 
-/*
-// TODO
-	- Set up material switching on the sphere
-		- Use DDL of materials to select
-	- Clean up HTML (css file?)
-
-*/
-
-
-// Global Variables
-//------------For WebGL-----------------------------------------------
-var gl;           // webGL Rendering Context. Set in main(), used everywhere.
-var g_canvas = document.getElementById('webgl');     
-				  // our HTML-5 canvas object that uses 'gl' for drawing.
-	  
-				  
-// ----------For Vertex Buffers---------------------------------
-var floatsPerVertex = 7;		// # floats/vertex orinally
-var floatsPerVertexNorm = 10;	// # floats/vertex with surface normals added
-
-
-//------------For Animation---------------------------------------------
-var pauseAnimations = false;	// Control whether to update animations
-var g_lastMS = Date.now();    	// Timestamp for most-recently-drawn image (ms)					
-
-var g_angle_gyro = 0;			// Angle of rotating ring
-var g_angle_gyroRate = 30;		// Rate of rotation for rotating ring (deg/sec)
-
-var openingBox = false;
-var g_angle_box = 90.0;			// Initial angle between the faces of the cube
-var g_angle_boxRate = 45;		// Rotation speed for sides of cube
-var g_angle_boxMax = 90.0;		// Maximum amount cube faces can rotate
-var g_angle_boxMin = 0.0;		// Minimum amount cube faces can rotate
-
-var cylOpening = true;
-var cylAngle = 0.0;				// Initial position of rolling cylinder	
-var cylAnlge_Rate = 90.0;		// Rate of change for rolling cylinder
-
-
-
-// -----------For 3D camera controls ----------------------------------
-var W_keyActive = false;	// \
-var A_keyActive = false;	//  \___ Moving camera
-var S_keyActive = false;	//  /
-var D_keyActive = false;	// /
-
-var U_arrowActive = false;	// \
-var L_arrowActive = false;	//  \___ Rotating Camera
-var D_arrowActive = false;	//	/
-var R_arrowActive = false;	// /
-
-var e_x = 0		// \
-var e_y = -6	//  -> Camera eye locations
-var e_z = 1		// /
-
-var theta_H = 90*Math.PI/180;	// Horizontal pitch (in radians for JS trig functions)
-var theta_V = -5*Math.PI/180;	// Vertical pitch	(in radians for JS trig functions)
-
-var L_x = e_x + Math.cos(theta_H);	// \ 
-var L_y = e_y + Math.sin(theta_H);	//  -> Camera lookat locations
-var L_z = e_z + Math.sin(theta_V);	// /
-
-
-// ------------For Vertex Buffers ------------------------------------
+// ====== GLOBAL VARIABLES ======
+// WebGL
+const g_canvas = document.querySelector('#webgl');
+/** @global */
+const gl = getWebGLContext(g_canvas)
+ 
+// Vertex Buffers
+/** @global */
+const floatsPerVertex = 7;		// # floats/vertex orinally
+/** @global */
+const floatsPerVertexNorm = 10;	// # floats/vertex with surface normals added
+/** @global  */
 g_worldMat = new Matrix4();		// Matrix with camera transformations
 
-var worldBox = new VBObox0();	// Holds ground-plane, axis marker, and light marker
-var gouraudBox = new VBObox1();	// Holds scene with Gouraud shading
-var phongBox = new VBObox2();	// Holds scene with Phong shading
+const worldBox = new VBObox0();		// Holds ground-plane, axis marker, and light marker
+const gouraudBox = new VBObox1();	// Holds scene with Gouraud shading
+const phongBox = new VBObox2();		// Holds scene with Phong shading
 
+// Animations
+let pauseAnimations = false;	// Control whether to update animations
+let g_last = Date.now();		// Timestamp for most-recently-drawn image				
 
-// ------------For Lighting/Shading ----------------------------------
-var showGroundGrid = true;
-var GouraudActive = true;
+/** @global */
+let g_angle_gyro = 0;			// Angle of rotating ring
+let g_angle_gyroRate = 30;		// Rate of rotation for rotating ring (deg/sec)
 
-var lightOn = true;
+let openingBox = false;
+let g_angle_box = 90.0;			// Initial angle between the faces of the cube
+const g_angle_boxRate = 45;		// Rotation speed for sides of cube
+const g_angle_boxMax = 90.0;	// Maximum amount cube faces can rotate
+const g_angle_boxMin = 0.0;		// Minimum amount cube faces can rotate
 
-var lightingMode = 1.0;		// 1.0 = Phong Lighting
+let cylOpening = true;
+let cylAngle = 0.0;				// Initial position of rolling cylinder	
+const cylAnlge_Rate = 90.0;		// Rate of change for rolling cylinder
+
+// 3D camera controls
+let W_keyActive = false;	// \
+let A_keyActive = false;	//  \___ Moving camera
+let S_keyActive = false;	//  /
+let D_keyActive = false;	// /
+
+let U_arrowActive = false;	// \
+let L_arrowActive = false;	//  \___ Rotating Camera
+let D_arrowActive = false;	//	/
+let R_arrowActive = false;	// /
+
+let e_x = 0		// \
+let e_y = -6	//  -> Camera eye locations
+let e_z = 1		// /
+
+let theta_H = 90*Math.PI/180;	// Horizontal pitch (in radians for JS trig functions)
+let theta_V = -5*Math.PI/180;	// Vertical pitch	(in radians for JS trig functions)
+
+let L_x = e_x + Math.cos(theta_H);	// \ 
+let L_y = e_y + Math.sin(theta_H);	//  -> Camera lookat locations
+let L_z = e_z + Math.sin(theta_V);	// /
+
+// Lighting/Shading
+let showGroundGrid = true;
+let shadeGouraud = true;
+
+let lightOn = true;
+
+let lightingMode = 1.0;		// 1.0 = Phong Lighting
 							// 0.0 = Blinn-Phong lighting
-var sphereMatl = 1.0;
+let sphereMatl = 1.0;
 
-var lightPosX = 0.0;
-var lightPosY = 0.0;
-var lightPosZ = 1.0;
+let lightPosX = 0.0;
+let lightPosY = 0.0;
+let lightPosZ = 1.0;
 
-var lightColr_Ambi = new Float32Array([0.2, 0.2, 0.2]);
-var lightColr_Diff = new Float32Array([0.8, 0.8, 0.8]);
-var lightColr_Spec = new Float32Array([1.0, 1.0, 1.0]);
-
-
+let lightColr_Ambi = new Float32Array([0.2, 0.2, 0.2]);
+let lightColr_Diff = new Float32Array([0.8, 0.8, 0.8]);
+let lightColr_Spec = new Float32Array([1.0, 1.0, 1.0]);
 
 
-function main() {
-//==============================================================================
-
-	// Get gl, the rendering context for WebGL, from our 'g_canvas' object
-	gl = getWebGLContext(g_canvas);
+// ====== CALLBACK FUNCTIONS ======
+function initCanvas() {
+	/**
+	 * Initialize the WebGL canvas
+	 * 
+	 * @function initCanvas
+	 */
 	if (!gl) {
-    	console.log('Failed to get the rendering context for WebGL');
-    	return;
+		console.log('Failed to get the rendering context for WebGL');
+		return;
 	}
-	  
-	// Add keyboard event listeners
-	window.addEventListener("keydown", myKeyDown, false);
-	window.addEventListener("keyup", myKeyUp, false);
-	
-	// Add onClick handlers
 
 	gl.enable(gl.DEPTH_TEST); 
 
 	// Resize canvas
 	resizeCanvas();
-	document.querySelector('body').setAttribute('onresize', 'resizeCanvas()')
 
 	// Init VBO 
 	worldBox.init(gl);
@@ -129,89 +108,45 @@ function main() {
 	// Specify the color for clearing <canvas>
 	gl.clearColor(0.25, 0.2, 0.25, 1.0);
 
-	// Initialize light input controls
-	const initLightPosition = [lightPosX, lightPosY, lightPosZ];
-	document.querySelectorAll('.light_position').forEach((input, idx) => {
-		input.setAttribute('type', 'range');
-		input.setAttribute('class', 'slider');
-		input.setAttribute('min', '-5');
-		input.setAttribute('max', '5');
-		input.setAttribute('step', '0.1');
-		input.setAttribute('value', String(initLightPosition[idx]));
-		input.setAttribute('onkeydown', "event.preventDefault()");
-	})
-
-	const initLightColor = ['#333333', '#cccccc', '#ffffff']
-	document.querySelectorAll('.light_color').forEach((input, idx) => {
-		input.setAttribute('type', 'color');
-		input.setAttribute('value', initLightColor[idx])
-	})
-
 	tick();
 }
-
 function resizeCanvas() {
-	// Resize WebGL canvas based on browser window size
+	/**
+	 * Resize WebGL canvas based on browser window size
+	 * 
+	 * @function resizeCanvas
+	 */
 
-	var xtraMargin = 16;	// Maintain a margin (to prevent scroll bar)
+	// Maintain small margin
+	const extraMargin = 16;
 
-	g_canvas.width = innerWidth - xtraMargin;
-	g_canvas.height = (innerHeight*0.70) - xtraMargin;
+	g_canvas.width = innerWidth - extraMargin;
+	g_canvas.height = (innerHeight*0.70) - extraMargin;
 
-}
-
-function updateLightColors() {
-	const splitColor = (colorString) => (
-		[1,3,5].map(idx => (
-			parseInt(Number('0x'+colorString.slice(idx, idx+2))) / 255
-		))
-	)
-
-	let ambiString = document.getElementById('light_color_ambi').value;
-	let diffString = document.getElementById('light_color_diff').value;
-	let specString = document.getElementById('light_color_spec').value;
-
-	lightColr_Ambi.set(splitColor(ambiString));
-	lightColr_Diff.set(splitColor(diffString));
-	lightColr_Spec.set(splitColor(specString));
-}
-
-function toggleLightONOFF() {
-	if (lightOn) {
-		// Turn light off
-		lightOn = false;
-		console.log('turn light off');
-		lightColr_Ambi.set([0.0, 0.0, 0.0]);
-		lightColr_Diff.set([0.0, 0.0, 0.0]);
-		lightColr_Spec.set([0.0, 0.0, 0.0]);
-
-		document.getElementById('btnToggleLight').innerHTML = 'Turn Light ON';
-	} else {
-		lightOn = true;
-
-		updateLightColors();
-
-		document.getElementById('btnToggleLight').innerHTML = 'Turn Light OFF';
-
-	}
 }
 
 function setCamera() {
-	// -- PERSPECTIVE Viewport -- //
-	gl.viewport(0,
+	/**
+	 * Establish the camera viewport
+	 * 
+	 * @function setCamera
+	 */
+
+	gl.viewport(
+		0,
 		0,
 		g_canvas.width,
 		g_canvas.height);
 
-	
-	// Define viewport aspect ratio
-	var vpAspect = g_canvas.width / g_canvas.height;
+	// Viewport aspect ratio
+	let vpAspect = g_canvas.width / g_canvas.height;
 
-	// Define perspective parameters	
-	var FOV = 30.0;
-	var zNear = 1.0;
-	var zFar = 20.0;
+	// Perspective parameters	
+	const FOV = 30.0;
+	const zNear = 1.0;
+	const zFar = 20.0;
 	
+	// Update camera position and rotation
 	updateCamera();
 
 	g_worldMat.setPerspective(
@@ -225,19 +160,21 @@ function setCamera() {
 		L_x, L_y, L_z,		// Look-at point
 		0 ,  0 ,  1 );		// View UP vector
 }
-
 function updateCamera() {
-	// ---- Pitch Adjustments ---- //
-	// Horizontal rotation
+	/**
+	 * Update camera rotation and position based on keyboard inputs
+	 * 
+	 * @function updateCamera
+	 */
+
 	if (L_arrowActive && !R_arrowActive) {
-		// Just L arrow pressed ---> Rotate left by 1 degree
-		//console.log("Left arrow pressed: Rotate left!");
+		// Rotate camera left
 		theta_H += 0.8*Math.PI/180;
 	} else if (!L_arrowActive && R_arrowActive) {
-		// Just R arrow pressed ---> Rotate right by 1 degree
-		//console.log("Right arrow pressed: Rotate right!");
+		// Rotate camera right
 		theta_H -= 0.8*Math.PI/180;
 	}
+
 	// Ensure theta_H bounded between -pi and pi
 	if (theta_H > Math.PI) {
 		theta_H -= 2*Math.PI;
@@ -245,31 +182,23 @@ function updateCamera() {
 		theta_H += 2*Math.PI;
 	}
 
-	// Vertical rotation
 	if (U_arrowActive && !D_arrowActive) {
-		// Just U arrow pressed ---> Rotate up
-		//console.log("Up arrow pressed: Rotate up!");
-		// Rotate by 1 degree and limit to within PI/2
+		// Rotate camera up
 		theta_V += 0.7*Math.PI/180;
 		theta_V = Math.min(theta_V, Math.PI/2);
 	} else if (!U_arrowActive && D_arrowActive) {
-		//console.log("Down arrow pressed: Rotate down!");
-		// Rotate by 1 degree and limit to within PI/2
+		// Rotate camera down
 		theta_V -= 0.7*Math.PI/180
 		theta_V = Math.max(theta_V, -Math.PI/2);
 	}
 	
-	// Update lookat position
+	// Update lookat position based on camera rotation
 	L_x = e_x + Math.cos(theta_H);
 	L_y = e_y + Math.sin(theta_H);
 	L_z = e_z + Math.sin(theta_V);
 
-
-
-	// Move forward
 	if (W_keyActive && !S_keyActive) {
-		// Just W key pressed ---> Move forward
-		//console.log("W key pressed: Move forward!");
+		// Move forward
 		e_x += Math.cos(theta_H)/10;
 		e_y += Math.sin(theta_H)/10;
 		e_z += Math.sin(theta_V)/10;
@@ -279,8 +208,7 @@ function updateCamera() {
 		L_z += Math.sin(theta_V)/10;
 		
 	} else if (!W_keyActive && S_keyActive) {
-		// Just S key pressed ---> Move back
-		//console.log("S key pressed: Move backwards!");
+		// Move backwards
 		e_x -= Math.cos(theta_H)/10;
 		e_y -= Math.sin(theta_H)/10;
 		e_z -= Math.sin(theta_V)/10;
@@ -291,66 +219,129 @@ function updateCamera() {
 	}
 
 	if (A_keyActive && !D_keyActive) {
-		// Just A key pressed ---> Strafe left
-		//console.log("A key pressed: Strafe left!");
+		// Strafe left
 		e_x += Math.cos(theta_H+(Math.PI/2))/10;
 		e_y += Math.sin(theta_H+(Math.PI/2))/10;
-		
+
 		L_x += Math.cos(theta_H+(Math.PI/2))/10;
 		L_y += Math.sin(theta_H+(Math.PI/2))/10;
+
 	} else if (!A_keyActive && D_keyActive) {
-		// Just D key pressed ---> Strafe right
-		//console.log("D key pressed: Strafe right!");
+		// Strafe right
 		e_x -= Math.cos(theta_H+(Math.PI/2))/10;
 		e_y -= Math.sin(theta_H+(Math.PI/2))/10;
-		
+
 		L_x -= Math.cos(theta_H+(Math.PI/2))/10;
 		L_y -= Math.sin(theta_H+(Math.PI/2))/10;
 	}
 }
 
-
-// ANIMATION: create 'tick' variable whose value is this function:
-//----------------- 
 function tick() {
+	/**
+	 * Continually called function that updates the scene drawn to the canvas
+	 * 
+	 * @function tick
+	 */
 
-	// Update rotating ring speed from slider
-	lightPosX = document.getElementById('lightPosX').value;
-	lightPosY = document.getElementById('lightPosY').value;
-	lightPosZ = document.getElementById('lightPosZ').value;
 
-	document.getElementById('lightPosXDisplay').innerHTML = Number(lightPosX).toFixed(1);
-	document.getElementById('lightPosYDisplay').innerHTML = Number(lightPosY).toFixed(1);
-	document.getElementById('lightPosZDisplay').innerHTML = Number(lightPosZ).toFixed(1);
+	// Update light position
+	lightPosX = document.querySelector('#light_position_x').value;
+	lightPosY = document.querySelector('#light_position_y').value;
+	lightPosZ = document.querySelector('#light_position_z').value;
+
+	document.querySelector('#light_position_x_display').innerHTML = Number(lightPosX).toFixed(1);
+	document.querySelector('#light_position_y_display').innerHTML = Number(lightPosY).toFixed(1);
+	document.querySelector('#light_position_z_display').innerHTML = Number(lightPosZ).toFixed(1);
 
 	// Update Sphere material
-	sphereMatl = parseInt(document.getElementById('matlSelect').value);
+	sphereMatl = parseInt(document.querySelector('#matlSelect').value);
 
-	animate();		// Update the rotation angle
+	// Animate the scene
+	animate();
+
+	// Light the scene
 	if (lightOn) {
 		updateLightColors();
 	}
-	drawAll();		// Draw all parts
+
+	// Draw the scene
+	drawAll();
+
+	// Request canvas to be redrawn with 'tick' function
+    requestAnimationFrame(tick, g_canvas);
+}
+function animate() {
+	/**
+	 * Progress the animation variables within the scene
+	 * 
+	 * @function animate
+	 */
+
+  	// Calculate the elapsed time
+	let now = Date.now();
+	let elapsed = now - g_last;
+	g_last = now;
+
+	if (pauseAnimations) {
+		// Don't update animations while paused
+		return;
+	}
+
+	if (cylOpening) {
+		let newCylAngle = cylAngle + (cylAnlge_Rate*elapsed)/1000.0;
+		cylAngle = (newCylAngle <= 360) ? newCylAngle : 360;
+		cylOpening = (newCylAngle <= 360);
+	} else {
+		let newCylAngle = cylAngle - (cylAnlge_Rate*elapsed)/1000.0;
+		cylAngle = (newCylAngle >= -45) ? newCylAngle : -45;
+		cylOpening = (newCylAngle < -45);
+	}
+
+
+	if (openingBox) {
+		let newBoxAngle = g_angle_box + (g_angle_boxRate * elapsed)/1000.0;
+		g_angle_box = (newBoxAngle <= g_angle_boxMax) ? newBoxAngle : g_angle_box;
+		openingBox = (newBoxAngle <= g_angle_boxMax);
+	} else {
+		let newBoxAngle = g_angle_box - (g_angle_boxRate * elapsed)/1000.0;
+		g_angle_box = (newBoxAngle >= g_angle_boxMin) ? newBoxAngle : g_angle_box;
+		openingBox = (newBoxAngle < g_angle_boxMin);
+	}
+
 	
+	let newGyroAngle = g_angle_gyro + (g_angle_gyroRate*elapsed) / 1000.0;
+	if(newGyroAngle > 180.0) newGyroAngle = newGyroAngle - 360.0;
+	if(newGyroAngle < 180.0) newGyroAngle = newGyroAngle + 360.0;
+	g_angle_gyro = newGyroAngle;
+  
+}
+function updateLightColors() {
+	/**
+	 * Update scene light colors based on user input
+	 * 
+	 * @function updateLightColors
+	 */
+	const splitColor = (colorString) => (
+		[1,3,5].map(idx => (
+			parseInt(Number('0x'+colorString.slice(idx, idx+2))) / 255
+		))
+	)
 
-	// Display information about camera location
-	/*
-	document.getElementById('cameraEyePos').innerHTML=
-		'(' + e_x.toFixed(1) + ', ' + e_y.toFixed(1) + ', ' + e_z.toFixed(1) + ')';
-	document.getElementById('cameraRotHz').innerHTML= 
-		(theta_H*180.0/Math.PI).toFixed(1)+'°';
-	document.getElementById('cameraRotVt').innerHTML=
-		(theta_V*180.0/Math.PI).toFixed(1)+'°';
-	*/
+	let ambiString = document.querySelector('#light_color_ambi').value;
+	let diffString = document.querySelector('#light_color_diff').value;
+	let specString = document.querySelector('#light_color_spec').value;
 
-
-	//--------------------------------
-    requestAnimationFrame(tick, g_canvas);   
-    									// Request that the browser re-draw the webpage
-    									// (causes webpage to endlessly re-draw itself)
-};
-
+	lightColr_Ambi.set(splitColor(ambiString));
+	lightColr_Diff.set(splitColor(diffString));
+	lightColr_Spec.set(splitColor(specString));
+}
 function drawAll() {
+	/**
+	 * Draw the full 3D scene
+	 * 
+	 * @function drawAll
+	 */
+
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	
 	setCamera();
@@ -363,7 +354,7 @@ function drawAll() {
 		worldBox.draw();
 	}
 
-	if (GouraudActive) {
+	if (shadeGouraud) {
 		// Draw Gouraud shading scene
 		gouraudBox.switchToMe();
 		gouraudBox.adjust();
@@ -377,103 +368,87 @@ function drawAll() {
 	
 }
 
+function toggleGroundGrid() {
+	/**
+	 * Toggle whether to render the ground grid
+	 * 
+	 * @function toggleGroundGrid
+	 */
 
-
-////  ------------------------------------------------------------------ //// 
-
-// Last time that this function was called:  (used for animation timing)
-var g_last = Date.now();
-
-function animate() {
-//==============================================================================
-
-  // Calculate the elapsed time
-	var now = Date.now();
-	var elapsed = now - g_last;
-	g_last = now;
-
-	// If currently paused, do not update automatic animations
-	if (pauseAnimations) {
-		return;
-	}
-
-	if (cylOpening) {
-		var newCylAngle = cylAngle + (cylAnlge_Rate*elapsed)/1000.0;
-		cylAngle = (newCylAngle <= 360) ? newCylAngle : 360;
-		cylOpening = (newCylAngle <= 360);
-	} else {
-		var newCylAngle = cylAngle - (cylAnlge_Rate*elapsed)/1000.0;
-		cylAngle = (newCylAngle >= -45) ? newCylAngle : -45;
-		cylOpening = (newCylAngle < -45);
-	}
-
-
-	if (openingBox) {
-		var newBoxAngle = g_angle_box + (g_angle_boxRate * elapsed)/1000.0;
-		g_angle_box = (newBoxAngle <= g_angle_boxMax) ? newBoxAngle : g_angle_box;
-		openingBox = (newBoxAngle <= g_angle_boxMax);
-	} else {
-		var newBoxAngle = g_angle_box - (g_angle_boxRate * elapsed)/1000.0;
-		g_angle_box = (newBoxAngle >= g_angle_boxMin) ? newBoxAngle : g_angle_box;
-		openingBox = (newBoxAngle < g_angle_boxMin);
-	}
-
-	
-	var newGyroAngle = g_angle_gyro + (g_angle_gyroRate*elapsed) / 1000.0;
-	if(newGyroAngle > 180.0) newGyroAngle = newGyroAngle - 360.0;
-	if(newGyroAngle < 180.0) newGyroAngle = newGyroAngle + 360.0;
-	g_angle_gyro = newGyroAngle;
-  
+	showGroundGrid = !showGroundGrid;
+	document.querySelector('#btn_toggle_ground_grid').innerHTML = (showGroundGrid) ? 'Hide Ground Grid' : 'Show Ground Grid';
 }
+function toggleShading() {
+	/**
+	 * Toggle between the different shading modes
+	 * 
+	 * @function toggleShading
+	 */
 
-//==================HTML Button Callbacks======================
-
-// Switch activated VBO objects
-function toggleVBO(vboNumber) {
-	switch(vboNumber) {
-		case 0:
-			showGroundGrid = !showGroundGrid;
-			document.getElementById('btn_toggle_ground_grid').innerHTML = (showGroundGrid) ? 'Hide Ground Grid' : 'Show Ground Grid';
-			break;
-		case 1:
-			GouraudActive = !GouraudActive;
-			document.getElementById('btn_toggle_shading').innerHTML = (GouraudActive) ? 'Switch to Phong Shading' : 'Switch to Gouraud Shading';
-			break;
-	}
+	shadeGouraud = !shadeGouraud;
+	document.querySelector('#btn_toggle_shading').innerHTML = (shadeGouraud) ? 'Switch to Phong Shading' : 'Switch to Gouraud Shading';
 }
+function toggleLightingMode() {
+	/**
+	 * Toggle between lighting modes
+	 * 
+	 * @function toggleLightingMode
+	 */
 
-function toggleLighting() {
 	if (lightingMode == 1.0) {
 		lightingMode = 0.0;
-		document.getElementById('btn_toggle_lighting').innerHTML = 'Switch to Phong Lighting';
+		document.querySelector('#btn_toggle_lighting').innerHTML = 'Switch to Phong Lighting';
 
 	} else {
 		lightingMode = 1.0;
-		document.getElementById('btn_toggle_lighting').innerHTML = 'Switch to Blinn-Phong Lighting';
+		document.querySelector('#btn_toggle_lighting').innerHTML = 'Switch to Blinn-Phong Lighting';
+	}
+}
+function toggleLight() {
+	/**
+	 * Toggle light on and off
+	 * 
+	 * @function toggleLight
+	 */
+
+	if (lightOn) {
+		lightOn = false;
+		lightColr_Ambi.set([0.0, 0.0, 0.0]);
+		lightColr_Diff.set([0.0, 0.0, 0.0]);
+		lightColr_Spec.set([0.0, 0.0, 0.0]);
+		document.querySelector('#btn_toggle_light').innerHTML = 'Turn Light ON';
+
+	} else {
+		lightOn = true;
+		updateLightColors();
+		document.querySelector('#btn_toggle_light').innerHTML = 'Turn Light OFF';
+
 	}
 }
 
+function handleKeyDown(kev) {
+	/**
+	 * Handle all key press inputs from user
+	 * 
+	 * @function handleKeyDown
+	 * @param {Object} key keyboard key event
+	 */
 
-
-//=================== Keyboard event-handling Callbacks
-
-function myKeyDown(kev) {
-//===============================================================================
-// Called when user presses down ANY key on the keyboard;
-/*
-// Report EVERYTHING in console:
-  	console.log(  "--kev.code:",    kev.code,   "\t\t--kev.key:",     kev.key, 
-              "\n--kev.ctrlKey:", kev.ctrlKey,  "\t--kev.shiftKey:",kev.shiftKey,
-              "\n--kev.altKey:",  kev.altKey,   "\t--kev.metaKey:", kev.metaKey);
+	/*
+	// Report EVERYTHING in console:
+	console.log(`
+		--kev.code: ${kev.code}		--kev.key: ${kev.key}
+		--kev.ctrlKey: ${kev.ctrlKey}	--kev.shiftKey: ${kev.shiftKey}
+		--kev.altKey: ${kev.altKey}	--kev.metaKey: ${kev.metaKey}
+	`);
 	*/
  
 	switch(kev.code) {
 		case "KeyP":
 			pauseAnimations = !pauseAnimations;
-			console.log("pauseAnimations= " + pauseAnimations);
 			break;
 
-		//-------------- WASD navigation -----------------
+		// WASD navigation
 		case "KeyW":
 			W_keyActive = true;
 			break;
@@ -486,7 +461,8 @@ function myKeyDown(kev) {
 		case "KeyS":
 			S_keyActive = true;
 			break;
-		//-------------- Arrow controls ------------------
+
+		// Arrow controls
 		case "ArrowLeft":
 			L_arrowActive = true;
 			break;
@@ -499,16 +475,19 @@ function myKeyDown(kev) {
 		case "ArrowDown":
 			D_arrowActive = true;
 			break;
-    default:
-      console.log("UNUSED!");
-      break;
 	}
 }
+function handleKeyUp(kev) {
+	/**
+	 * Handle all key release inputs from user
+	 * 
+	 * @function handleKeyUp
+	 * @param {Object} kev keyboard key event
+	 */
 
-function myKeyUp(kev) {
-//===============================================================================
-// Called when user releases ANY key on the keyboard; captures scancodes well
 	switch(kev.code) {
+
+		// WASD navigation
 		case "KeyW":
 			W_keyActive = false;
 			break;
@@ -521,6 +500,8 @@ function myKeyUp(kev) {
 		case "KeyD":
 			D_keyActive = false;
 			break;
+
+		// Arrow controls
 		case "ArrowLeft":
 			L_arrowActive = false;
 			break;
@@ -533,7 +514,35 @@ function myKeyUp(kev) {
 		case "ArrowDown":
 			D_arrowActive = false;
 			break;
-
 	}
-	//console.log('myKeyUp()--code='+kev.code+' released.');
 }
+
+
+// ====== EVENT HANDLERS AND ATTRIBUTES ======
+document.querySelector('body').setAttribute('onload', 'initCanvas()');
+document.querySelector('body').setAttribute('onresize', 'resizeCanvas()');
+
+window.addEventListener('keydown', handleKeyDown, false);
+window.addEventListener('keyup', handleKeyUp, false);
+
+document.querySelector('#btn_toggle_ground_grid').setAttribute('onclick', 'toggleGroundGrid()');
+document.querySelector('#btn_toggle_shading').setAttribute('onclick', 'toggleShading()');
+document.querySelector('#btn_toggle_lighting_mode').setAttribute('onclick', 'toggleLightingMode()');
+document.querySelector('#btn_toggle_light').setAttribute('onclick', 'toggleLight()');
+
+const initLightPosition = [lightPosX, lightPosY, lightPosZ];
+document.querySelectorAll('.light_position').forEach((input, idx) => {
+	input.setAttribute('type', 'range');
+	input.setAttribute('class', 'slider');
+	input.setAttribute('min', '-5');
+	input.setAttribute('max', '5');
+	input.setAttribute('step', '0.1');
+	input.setAttribute('value', String(initLightPosition[idx]));
+	input.setAttribute('onkeydown', "event.preventDefault()");
+});
+
+const initLightColor = ['#333333', '#cccccc', '#ffffff']
+document.querySelectorAll('.light_color').forEach((input, idx) => {
+	input.setAttribute('type', 'color');
+	input.setAttribute('value', initLightColor[idx])
+});
