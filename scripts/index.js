@@ -81,7 +81,7 @@ let lightColr_Spec = new Float32Array([1.0, 1.0, 1.0]);
 
 
 // ====== CALLBACK FUNCTIONS ======
-function initCanvas() {
+const initCanvas = () => {
 	/**
 	 * Initialize the WebGL canvas
 	 * 
@@ -110,7 +110,7 @@ function initCanvas() {
 
 	tick();
 }
-function resizeCanvas() {
+const resizeCanvas = () => {
 	/**
 	 * Resize WebGL canvas based on browser window size
 	 * 
@@ -125,7 +125,7 @@ function resizeCanvas() {
 
 }
 
-function setCamera() {
+const setCamera = () => {
 	/**
 	 * Establish the camera viewport
 	 * 
@@ -160,7 +160,7 @@ function setCamera() {
 		L_x, L_y, L_z,		// Look-at point
 		0 ,  0 ,  1 );		// View UP vector
 }
-function updateCamera() {
+const updateCamera = () => {
 	/**
 	 * Update camera rotation and position based on keyboard inputs
 	 * 
@@ -236,7 +236,7 @@ function updateCamera() {
 	}
 }
 
-function tick() {
+const tick = () => {
 	/**
 	 * Continually called function that updates the scene drawn to the canvas
 	 * 
@@ -254,7 +254,7 @@ function tick() {
 	document.querySelector('#light_position_z_display').innerHTML = Number(lightPosZ).toFixed(1);
 
 	// Update Sphere material
-	sphereMatl = parseInt(document.querySelector('#matlSelect').value);
+	sphereMatl = parseInt(document.querySelector('#material_select').value);
 
 	// Animate the scene
 	animate();
@@ -270,7 +270,7 @@ function tick() {
 	// Request canvas to be redrawn with 'tick' function
     requestAnimationFrame(tick, g_canvas);
 }
-function animate() {
+const animate = () => {
 	/**
 	 * Progress the animation variables within the scene
 	 * 
@@ -315,7 +315,7 @@ function animate() {
 	g_angle_gyro = newGyroAngle;
   
 }
-function updateLightColors() {
+const updateLightColors = () => {
 	/**
 	 * Update scene light colors based on user input
 	 * 
@@ -335,7 +335,7 @@ function updateLightColors() {
 	lightColr_Diff.set(splitColor(diffString));
 	lightColr_Spec.set(splitColor(specString));
 }
-function drawAll() {
+const drawAll = () => {
 	/**
 	 * Draw the full 3D scene
 	 * 
@@ -368,7 +368,7 @@ function drawAll() {
 	
 }
 
-function toggleGroundGrid() {
+const toggleGroundGrid = () => {
 	/**
 	 * Toggle whether to render the ground grid
 	 * 
@@ -378,7 +378,7 @@ function toggleGroundGrid() {
 	showGroundGrid = !showGroundGrid;
 	document.querySelector('#btn_toggle_ground_grid').innerHTML = (showGroundGrid) ? 'Hide Ground Grid' : 'Show Ground Grid';
 }
-function toggleShading() {
+const toggleShading = () => {
 	/**
 	 * Toggle between the different shading modes
 	 * 
@@ -388,7 +388,7 @@ function toggleShading() {
 	shadeGouraud = !shadeGouraud;
 	document.querySelector('#btn_toggle_shading').innerHTML = (shadeGouraud) ? 'Switch to Phong Shading' : 'Switch to Gouraud Shading';
 }
-function toggleLightingMode() {
+const toggleLightingMode = () => {
 	/**
 	 * Toggle between lighting modes
 	 * 
@@ -397,14 +397,14 @@ function toggleLightingMode() {
 
 	if (lightingMode == 1.0) {
 		lightingMode = 0.0;
-		document.querySelector('#btn_toggle_lighting').innerHTML = 'Switch to Phong Lighting';
+		document.querySelector('#btn_toggle_lighting_mode').innerHTML = "Switch to Phong Lighting";
 
 	} else {
 		lightingMode = 1.0;
-		document.querySelector('#btn_toggle_lighting').innerHTML = 'Switch to Blinn-Phong Lighting';
+		document.querySelector('#btn_toggle_lighting_mode').innerHTML = "Switch to Blinn-Phong Lighting";
 	}
 }
-function toggleLight() {
+const toggleLight = () => {
 	/**
 	 * Toggle light on and off
 	 * 
@@ -426,7 +426,7 @@ function toggleLight() {
 	}
 }
 
-function handleKeyDown(kev) {
+const handleKeyDown = (kev) => {
 	/**
 	 * Handle all key press inputs from user
 	 * 
@@ -477,7 +477,7 @@ function handleKeyDown(kev) {
 			break;
 	}
 }
-function handleKeyUp(kev) {
+const handleKeyUp = (kev) => {
 	/**
 	 * Handle all key release inputs from user
 	 * 
@@ -529,6 +529,8 @@ document.querySelector('#btn_toggle_ground_grid').setAttribute('onclick', 'toggl
 document.querySelector('#btn_toggle_shading').setAttribute('onclick', 'toggleShading()');
 document.querySelector('#btn_toggle_lighting_mode').setAttribute('onclick', 'toggleLightingMode()');
 document.querySelector('#btn_toggle_light').setAttribute('onclick', 'toggleLight()');
+
+document.querySelector('#material_select').setAttribute('onkeydown', 'event.preventDefault()')
 
 const initLightPosition = [lightPosX, lightPosY, lightPosZ];
 document.querySelectorAll('.light_position').forEach((input, idx) => {
