@@ -91,13 +91,13 @@ select {
     overflow: auto;
 }
 
-#general_controls_matlSelect_container {
+#general_controls_material_container {
     width: 100%;
     margin-top: 5px;
     align-content: center;
 }
 
-#general_controls_matlSelect_title {
+#general_controls_material_title {
     display: block;
     width: 100%;
     margin-top: 8px; 
