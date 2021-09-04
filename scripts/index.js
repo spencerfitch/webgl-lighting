@@ -533,7 +533,7 @@ document.querySelector('#btn_toggle_light').setAttribute('onclick', 'toggleLight
 document.querySelector('#material_select').setAttribute('onkeydown', 'event.preventDefault()')
 
 const initLightPosition = [lightPosX, lightPosY, lightPosZ];
-document.querySelectorAll('.light_position').forEach((input, idx) => {
+document.querySelectorAll('.light-position').forEach((input, idx) => {
 	input.setAttribute('type', 'range');
 	input.setAttribute('class', 'slider');
 	input.setAttribute('min', '-5');
@@ -544,7 +544,7 @@ document.querySelectorAll('.light_position').forEach((input, idx) => {
 });
 
 const initLightColor = ['#333333', '#cccccc', '#ffffff']
-document.querySelectorAll('.light_color').forEach((input, idx) => {
+document.querySelectorAll('.light-color').forEach((input, idx) => {
 	input.setAttribute('type', 'color');
 	input.setAttribute('value', initLightColor[idx])
 });
